@@ -15,6 +15,16 @@ function load() {
 function save() {
   try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { console.warn('Could not save', e); }
 }
+// two-tap confirm (window.confirm is blocked in some embedded viewers)
+function twoTap(btn, label, action) {
+  const orig = btn.textContent;
+  let t;
+  btn.addEventListener('click', () => {
+    if (btn.dataset.armed) { clearTimeout(t); delete btn.dataset.armed; btn.textContent = orig; action(); return; }
+    btn.dataset.armed = '1'; btn.textContent = label;
+    t = setTimeout(() => { delete btn.dataset.armed; btn.textContent = orig; }, 3000);
+  });
+}
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const $ = (s) => document.querySelector(s);
 const el = (tag, props = {}, ...kids) => {
@@ -75,7 +85,7 @@ function renderHabits() {
       week.append(cell);
     }
     const del = el('button', { className: 'danger del', textContent: 'Delete' });
-    del.onclick = () => { if (confirm(`Delete habit "${h.name}" and its history?`)) { state.habits = state.habits.filter((x) => x.id !== h.id); save(); renderHabits(); } };
+    twoTap(del, 'Tap to confirm', () => { state.habits = state.habits.filter((x) => x.id !== h.id); save(); renderHabits(); });
 
     list.append(el('div', { className: 'habit' }, check, info, del, week));
   }
@@ -179,8 +189,7 @@ $('#note-new').addEventListener('click', () => {
   state.notes.push(n); selected = n.id; save(); $('#note-search').value = '';
   renderNotes(); renderEditor(); $('#note-title').focus();
 });
-$('#note-delete').addEventListener('click', () => {
-  if (!confirm('Delete this note?')) return;
+twoTap($('#note-delete'), 'Tap to confirm', () => {
   state.notes = state.notes.filter((x) => x.id !== selected);
   selected = null; save(); renderNotes(); renderEditor();
 });
@@ -198,10 +207,9 @@ $('#import').addEventListener('change', async (e) => {
   try {
     const d = JSON.parse(await f.text());
     if (!Array.isArray(d.habits) || !Array.isArray(d.todos) || !Array.isArray(d.notes)) throw new Error('bad shape');
-    if (!confirm('Replace all current data with this backup?')) return;
     state = { habits: d.habits, todos: d.todos, notes: d.notes };
     selected = null; save(); renderAll();
-  } catch { alert('That file is not a valid Cadence backup.'); }
+  } catch { $('#import').parentElement.firstChild.textContent = 'Invalid file'; setTimeout(() => ($('#import').parentElement.firstChild.textContent = 'Import'), 2500); }
 });
 
 // ---------- init ----------
