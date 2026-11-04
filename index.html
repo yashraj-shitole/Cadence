@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cadence</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="top">
+  <h1>Cadence</h1>
+  <nav class="tabs" role="tablist">
+    <button role="tab" data-tab="habits" aria-selected="true">Habits</button>
+    <button role="tab" data-tab="todos" aria-selected="false">To-do</button>
+    <button role="tab" data-tab="notes" aria-selected="false">Notes</button>
+  </nav>
+  <div class="data-actions">
+    <button id="export" class="ghost" title="Download a backup">Export</button>
+    <label class="ghost btn" title="Restore from a backup">Import<input id="import" type="file" accept="application/json" hidden></label>
+  </div>
+</header>
+
+<main>
+  <!-- HABITS -->
+  <section id="habits" class="panel">
+    <div class="panel-head">
+      <h2>Today <span id="today-label" class="muted"></span></h2>
+      <span id="habit-progress" class="pill"></span>
+    </div>
+    <form id="habit-form" class="row">
+      <input id="habit-name" placeholder="New habit (e.g. Read 20 minutes)" maxlength="80" required>
+      <button class="primary">Add</button>
+    </form>
+    <div id="habit-list"></div>
+    <p id="habit-empty" class="empty" hidden>No habits yet. Add one above to start a streak.</p>
+  </section>
+
+  <!-- TODOS -->
+  <section id="todos" class="panel" hidden>
+    <div class="panel-head">
+      <h2>To-do</h2>
+      <div class="filters" id="todo-filters">
+        <button data-f="all" class="on">All</button>
+        <button data-f="open">Open</button>
+        <button data-f="done">Done</button>
+      </div>
+    </div>
+    <form id="todo-form" class="row">
+      <input id="todo-text" placeholder="What needs doing?" maxlength="200" required>
+      <input id="todo-due" type="date" aria-label="Due date">
+      <select id="todo-pri" aria-label="Priority">
+        <option value="1">Normal</option>
+        <option value="2">High</option>
+        <option value="0">Low</option>
+      </select>
+      <button class="primary">Add</button>
+    </form>
+    <ul id="todo-list" class="list"></ul>
+    <p id="todo-empty" class="empty" hidden>Nothing here.</p>
+    <button id="clear-done" class="ghost">Clear completed</button>
+  </section>
+
+  <!-- NOTES -->
+  <section id="notes" class="panel" hidden>
+    <div class="notes-layout">
+      <aside>
+        <div class="row">
+          <input id="note-search" type="search" placeholder="Search notes">
+          <button id="note-new" class="primary">New</button>
+        </div>
+        <ul id="note-list" class="list"></ul>
+        <p id="note-empty" class="empty" hidden>No notes.</p>
+      </aside>
+      <div class="editor" id="editor" hidden>
+        <input id="note-title" placeholder="Title" maxlength="120">
+        <textarea id="note-body" placeholder="Start writing…"></textarea>
+        <div class="row between">
+          <span id="note-meta" class="muted"></span>
+          <button id="note-delete" class="danger">Delete</button>
+        </div>
+      </div>
+      <div class="editor placeholder" id="editor-empty">Select or create a note.</div>
+    </div>
+  </section>
+</main>
+<script src="app.js"></script>
+</body>
+</html>
