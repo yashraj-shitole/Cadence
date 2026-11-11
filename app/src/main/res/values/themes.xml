@@ -1,0 +1,10 @@
+<resources>
+    <!-- Compose draws everything; the window only needs a calm ground while it starts. -->
+    <style name="Theme.Cadence" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/backdrop</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+    </style>
+</resources>

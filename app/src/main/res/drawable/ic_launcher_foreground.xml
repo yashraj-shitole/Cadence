@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Four beat dashes, three done: the Today beat bar, in one tone. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path android:fillColor="#F2EFE9" android:pathData="M25,49.25h4a4.75,4.75 0 0 1 0,9.5h-4a4.75,4.75 0 0 1 0,-9.5z" />
+    <path android:fillColor="#F2EFE9" android:pathData="M43,49.25h4a4.75,4.75 0 0 1 0,9.5h-4a4.75,4.75 0 0 1 0,-9.5z" />
+    <path android:fillColor="#F2EFE9" android:pathData="M61,49.25h4a4.75,4.75 0 0 1 0,9.5h-4a4.75,4.75 0 0 1 0,-9.5z" />
+    <path android:fillColor="#F2EFE9" android:fillAlpha="0.4" android:pathData="M79,49.25h4a4.75,4.75 0 0 1 0,9.5h-4a4.75,4.75 0 0 1 0,-9.5z" />
+</vector>

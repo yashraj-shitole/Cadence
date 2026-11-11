@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Splash ground only: `backdrop` from tokens.json (light). The running app reads the generated theme module. -->
+    <color name="backdrop">#F4F4F1</color>
+</resources>
