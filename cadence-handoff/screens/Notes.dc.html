@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Notes</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="cadence.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Geist:wght@400..700&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div class="cd-stage cd-screen" data-theme="{{theme}}" data-palette="{{palette}}" style="width: 390px; height: 844px">
+<i class="cd-glow cd-glow--1" style="width: 280px; height: 260px; left: -100px; top: -40px"></i>
+<i class="cd-glow cd-glow--2" style="width: 280px; height: 260px; right: -100px; top: 260px"></i>
+<i class="cd-glow cd-glow--3" style="width: 340px; height: 300px; left: -40px; bottom: -60px"></i>
+
+<header class="cd-screen__top">
+<div>
+<div class="cd-screen__date">6 notes · 2 pinned</div>
+<h1>Notes</h1>
+</div>
+<a class="cd-iconbtn cd-glass" href="NoteEditor.dc.html" aria-label="New note"><svg class="cd-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg></a>
+</header>
+
+<label class="cd-search cd-glass"><svg class="cd-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input placeholder="Search notes" aria-label="Search notes"></label>
+
+<div class="cd-chips" style="margin: 8px -20px 0; padding: 4px 20px">
+<sc-for list="{{filters}}" as="f" hint-placeholder-count="4"><button class="cd-chip {{f.cls}}" aria-pressed="{{f.on}}" onClick="{{f.pick}}">{{f.name}}</button></sc-for>
+</div>
+
+<div class="cd-screen__scroll">
+<h2 class="cd-section">Pinned <span>2</span></h2>
+<div class="cd-list">
+<a class="cd-note cd-glass cd-press" href="NoteEditor.dc.html">
+<div class="cd-note__title"><span>Trip packing</span><svg class="cd-icon cd-icon--sm" viewBox="0 0 24 24" role="img" aria-label="Pinned"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg></div>
+<p>2 of 5 done · Charger and the long cable. Check the monsoon forecast before choosing shoes.</p>
+<div class="cd-note__foot"><span class="cd-tag">Home</span><time>Today</time></div>
+</a>
+<a class="cd-note cd-glass cd-press" href="NoteEditor.dc.html">
+<div class="cd-note__title"><span>Ideas for the talk</span><svg class="cd-icon cd-icon--sm" viewBox="0 0 24 24" role="img" aria-label="Pinned"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg></div>
+<p>Open with the chai story. Three points only. End on the balcony photo.</p>
+<div class="cd-note__foot"><span class="cd-tag">Work</span><time>Sun</time></div>
+</a>
+</div>
+
+<h2 class="cd-section">All notes <span>4</span></h2>
+<div class="cd-list">
+<a class="cd-note cd-glass cd-press" href="NoteEditor.dc.html">
+<div class="cd-note__title"><span>Books to borrow</span></div>
+<p>The one Meera mentioned about slow mornings. Ask the library about the waitlist.</p>
+<div class="cd-note__foot"><span class="cd-tag">Reading</span><time>Yesterday</time></div>
+</a>
+<a class="cd-note cd-glass cd-press" href="NoteEditor.dc.html">
+<div class="cd-note__title"><span>Dal recipe from Aai</span></div>
+<p>Temper the mustard seeds first. Kokum goes in last, off the heat.</p>
+<div class="cd-note__foot"><span class="cd-tag">Home</span><time>3 Nov</time></div>
+</a>
+</div>
+</div>
+
+<div class="cd-screen__tabbar">
+<nav class="cd-tabbar cd-glass cd-glass--raised" aria-label="Main">
+<a class="cd-tab" href="Main.dc.html"><svg class="cd-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg><span>Today</span></a>
+<a class="cd-tab" href="Habits.dc.html"><svg class="cd-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg><span>Habits</span></a>
+<a class="cd-add" href="QuickAdd.dc.html" aria-label="Quick add"><svg class="cd-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg></a>
+<a class="cd-tab" href="Tasks.dc.html"><svg class="cd-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span>Tasks</span></a>
+<a class="cd-tab" href="Notes.dc.html" aria-current="page"><svg class="cd-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4M16 13H8M16 17H8"/></svg><span>Notes</span></a>
+</nav>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"palette":{"editor":"enum","options":["meadow","ultramarine","dusk","rose","lagoon","graphite"],"default":"meadow","section":"Appearance"},"theme":{"editor":"enum","options":["light","dark","hc-light","hc-dark"],"default":"light"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { filter: 'All' };
+}
+renderVals() {
+const s = this.state;
+return {
+theme: this.props.theme ?? 'light', palette: this.props.palette ?? 'meadow',
+filters: ['All', 'Home', 'Work', 'Reading'].map((name) => ({ name: name, on: s.filter === name ? 'true' : 'false', cls: s.filter === name ? 'is-on' : '', pick: () => this.setState({ filter: name }) }))
+};
+}
+}
+</script>
+</body>
+</html>

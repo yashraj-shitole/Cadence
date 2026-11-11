@@ -1,0 +1,24 @@
+<!-- @dsCard height=288 -->
+<!doctype html><html lang="en"><head><meta charset="utf-8"><link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700&family=Geist:wght@400..600&display=swap" rel="stylesheet">
+<style>
+html,body{margin:0}
+.cover{position:relative;width:960px;height:288px;background:var(--backdrop);overflow:hidden}
+.cover svg{position:absolute;inset:0}
+.t{rx:var(--radius-card)}
+.cream{fill:var(--glow-3)}.blue{fill:var(--glow-1)}.sage{fill:var(--glow-2)}.ink{fill:var(--ink)}
+.on{fill:var(--accent)}.off{fill:var(--control-edge)}
+[data-theme^="hc"] .cream,[data-theme^="hc"] .blue,[data-theme^="hc"] .sage{stroke:var(--control-edge);stroke-width:2}
+.txt{position:absolute;left:40px;bottom:36px;width:440px}
+.name{font:700 96px/.95 var(--font-display);letter-spacing:-.03em;color:var(--ink);margin:0}
+.tag{font:450 14px/20px var(--font-text);color:var(--ink-muted);margin:12px 0 0}
+</style></head><body><div class="cover">
+<svg viewBox="0 0 960 288" aria-hidden="true">
+<!-- blocks: tiles in glow-1, glow-2, glow-3, accent and ink at full value, each 64px tall (space-12 + space-4), right of x=480
+     arrangement: a flush 5 x 3 modular grid with space-2 gaps; four tiles merged two- or three-wide, the accent one standing for the Next up card
+     pattern: geometric tiles cut by radius-card, some merged like the components, because every Cadence surface is a rounded glass tile; the eight-pill beat bar beneath counts 4 of 8
+     scales: tile 64, gap space-2, rx radius-card; pills 40 x 12 (space-3), rx half the short side -->
+<rect class="t cream" x="560" y="24" width="64" height="64"/><rect class="t blue" x="632" y="24" width="136" height="64"/><rect class="t sage" x="776" y="24" width="64" height="64"/><rect class="t ink" x="848" y="24" width="64" height="64"/><rect class="t blue" x="560" y="96" width="64" height="64"/><rect class="t on" x="632" y="96" width="208" height="64"/><rect class="t cream" x="848" y="96" width="64" height="64"/><rect class="t sage" x="560" y="168" width="64" height="64"/><rect class="t cream" x="632" y="168" width="64" height="64"/><rect class="t blue" x="704" y="168" width="64" height="64"/><rect class="t sage" x="776" y="168" width="136" height="64"/>
+<rect class="on" x="560.0" y="254" width="40" height="12" rx="6"/><rect class="on" x="604.6" y="254" width="40" height="12" rx="6"/><rect class="on" x="649.1" y="254" width="40" height="12" rx="6"/><rect class="on" x="693.7" y="254" width="40" height="12" rx="6"/><rect class="off" x="738.3" y="254" width="40" height="12" rx="6"/><rect class="off" x="782.9" y="254" width="40" height="12" rx="6"/><rect class="off" x="827.4" y="254" width="40" height="12" rx="6"/><rect class="off" x="872.0" y="254" width="40" height="12" rx="6"/>
+</svg>
+<div class="txt"><p class="name">Cadence</p><p class="tag">Habits, tasks and notes that keep a steady beat.</p></div>
+</div></body></html>

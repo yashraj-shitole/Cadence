@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Note editor</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="cadence.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Geist:wght@400..700&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div class="cd-stage cd-screen" data-theme="{{theme}}" data-palette="{{palette}}" style="width: 390px; height: 844px">
+<i class="cd-glow cd-glow--3" style="width: 300px; height: 260px; left: -80px; top: -60px"></i>
+<i class="cd-glow cd-glow--1" style="width: 280px; height: 280px; right: -110px; top: 240px"></i>
+<i class="cd-glow cd-glow--2" style="width: 320px; height: 280px; left: -60px; bottom: -40px"></i>
+
+<header class="cd-screen__top">
+<a class="cd-iconbtn cd-glass" href="Notes.dc.html" aria-label="Back to notes"><svg class="cd-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></a>
+<div class="cd-screen__date" role="status">Saved just now</div>
+<div style="display: flex; gap: 8px">
+<button class="cd-iconbtn cd-glass" aria-label="Unpin note" aria-pressed="true" style="color: var(--accent)"><svg class="cd-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg></button>
+<button class="cd-iconbtn cd-glass" aria-label="More options"><svg class="cd-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></button>
+</div>
+</header>
+
+<article class="cd-editor cd-glass cd-glass--raised">
+<h2>Trip packing</h2>
+<div class="cd-row__meta" style="margin: -4px 0 4px"><span class="cd-tag">Home</span><span>{{progress}}</span></div>
+<div>
+<sc-for list="{{lines}}" as="l" hint-placeholder-count="5">
+<div class="cd-line {{l.cls}}">
+<button class="cd-check cd-check--task" aria-label="{{l.label}}" onClick="{{l.toggle}}"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></i></button>
+<span>{{l.text}}</span>
+</div>
+</sc-for>
+</div>
+<p>Check the monsoon forecast before choosing shoes. The train leaves at 6:10 am, so pack the night before and leave the bag by the door.</p>
+<p class="cd-muted">Keep writing…</p>
+</article>
+
+<div class="cd-glass cd-glass--raised" style="position: absolute; left: 16px; right: 16px; bottom: 24px; height: 56px; padding: 0 8px; border-radius: var(--radius-pill); display: flex; align-items: center; justify-content: space-between">
+<div style="display: flex">
+<button class="cd-iconbtn" aria-label="Add checklist line"><svg class="cd-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 17 2 2 4-4M3 7l2 2 4-4M13 6h8M13 12h8M13 18h8"/></svg></button>
+<button class="cd-iconbtn" aria-label="Add tag"><svg class="cd-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12.6 2.6A2 2 0 0 0 11.2 2H4a2 2 0 0 0-2 2v7.2a2 2 0 0 0 .6 1.4l8.7 8.7a2.4 2.4 0 0 0 3.4 0l6.6-6.6a2.4 2.4 0 0 0 0-3.4z"/><circle cx="7.5" cy="7.5" r=".5"/></svg></button>
+<button class="cd-iconbtn" aria-label="Turn into a task"><svg class="cd-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></button>
+</div>
+<a class="cd-btn cd-btn--quiet" href="Notes.dc.html">Done</a>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"palette":{"editor":"enum","options":["meadow","ultramarine","dusk","rose","lagoon","graphite"],"default":"meadow","section":"Appearance"},"theme":{"editor":"enum","options":["light","dark","hc-light","hc-dark"],"default":"light"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { done: { passport: true, tickets: true } };
+}
+renderVals() {
+const s = this.state;
+const items = [
+{ id: 'passport', text: 'Passport and ID' },
+{ id: 'tickets', text: 'Printed tickets' },
+{ id: 'charger', text: 'Charger and the long cable' },
+{ id: 'notebook', text: 'The blue notebook' },
+{ id: 'umbrella', text: 'Small umbrella' }
+];
+const n = items.filter((i) => s.done[i.id]).length;
+return {
+theme: this.props.theme ?? 'light', palette: this.props.palette ?? 'meadow',
+progress: n + ' of ' + items.length + ' done',
+lines: items.map((i) => ({
+text: i.text, cls: s.done[i.id] ? 'is-done' : '', label: 'Tick ' + i.text,
+toggle: () => { const d = Object.assign({}, s.done); d[i.id] = !d[i.id]; this.setState({ done: d }); }
+}))
+};
+}
+}
+</script>
+</body>
+</html>

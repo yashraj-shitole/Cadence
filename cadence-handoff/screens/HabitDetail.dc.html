@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Habit detail</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="cadence.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Geist:wght@400..700&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div class="cd-stage cd-screen" data-theme="{{theme}}" data-palette="{{palette}}" style="width: 390px; height: 844px">
+<i class="cd-glow cd-glow--1" style="width: 320px; height: 300px; left: -60px; top: 120px"></i>
+<i class="cd-glow cd-glow--3" style="width: 240px; height: 220px; right: -90px; top: -50px"></i>
+<i class="cd-glow cd-glow--2" style="width: 300px; height: 260px; right: -80px; bottom: 40px"></i>
+
+<header class="cd-screen__top" style="margin-bottom: 12px">
+<a class="cd-iconbtn cd-glass" href="Habits.dc.html" aria-label="Back to habits"><svg class="cd-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></a>
+<button class="cd-iconbtn cd-glass" aria-label="More options"><svg class="cd-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></button>
+</header>
+
+<div class="cd-screen__scroll" style="padding-bottom: 150px">
+<h1 style="margin: 0; font: 700 32px/36px var(--font-display); letter-spacing: -.02em">Read 10 pages</h1>
+<div class="cd-screen__date" style="margin: 4px 0 20px">After chai, on the balcony</div>
+
+<section class="cd-glass" style="padding: 20px 16px 16px">
+<div style="display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 16px">
+<div class="cd-stat"><b>{{streak}}</b><span class="cd-row__title">day streak</span></div>
+<div style="text-align: right">
+<div class="cd-row__title">19 of 21</div>
+<div class="cd-row__sub">active days</div>
+</div>
+</div>
+<div class="cd-grid" role="img" aria-label="Last five weeks: 18 done, 1 minimum, 8 rest days, 2 missed">
+<span class="cd-grid__head">M</span><span class="cd-grid__head">T</span><span class="cd-grid__head">W</span><span class="cd-grid__head">T</span><span class="cd-grid__head">F</span><span class="cd-grid__head">S</span><span class="cd-grid__head">S</span>
+<sc-for list="{{cells}}" as="c" hint-placeholder-count="35"><i class="cd-cell {{c.cls}}"></i></sc-for>
+</div>
+<div class="cd-legend"><span><i class="cd-dot cd-dot--done"></i>Done</span><span><i class="cd-dot cd-dot--min"></i>Minimum</span><span><i class="cd-dot cd-dot--rest"></i>Rest</span><span><i class="cd-dot cd-dot--miss"></i>Missed</span></div>
+</section>
+
+<h2 class="cd-section">Rhythm</h2>
+<div class="cd-glass cd-group">
+<button class="cd-setting cd-press"><div class="cd-setting__body"><div class="cd-setting__title">Minimum version</div><div class="cd-setting__sub">Counts on a low-energy day</div></div><span class="cd-setting__value">1 page<svg class="cd-icon cd-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span></button>
+<button class="cd-setting cd-press"><div class="cd-setting__body"><div class="cd-setting__title">Time of day</div></div><span class="cd-setting__value">Afternoon<svg class="cd-icon cd-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span></button>
+<button class="cd-setting cd-press"><div class="cd-setting__body"><div class="cd-setting__title">Rest days</div><div class="cd-setting__sub">Keep the streak, off the day's count</div></div><span class="cd-setting__value">Sat, Sun<svg class="cd-icon cd-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span></button>
+</div>
+</div>
+
+<div class="cd-glass cd-glass--raised" style="position: absolute; left: 16px; right: 16px; bottom: 24px; padding: 12px; border-radius: var(--radius-sheet); display: flex; gap: 8px">
+<button class="cd-btn cd-btn--primary cd-press" style="flex: 1" onClick="{{log}}">{{logLabel}}</button>
+<button class="cd-btn cd-btn--glass cd-press" onClick="{{logMin}}">Did the minimum</button>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"palette":{"editor":"enum","options":["meadow","ultramarine","dusk","rose","lagoon","graphite"],"default":"meadow","section":"Appearance"},"theme":{"editor":"enum","options":["light","dark","hc-light","hc-dark"],"default":"light"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { today: '' };
+}
+renderVals() {
+const t = this.state.today;
+const names = { d: 'done', m: 'min', r: 'rest', x: 'miss', f: 'future' };
+const grid = 'dddddrr' + 'dmddxrr' + 'dddddrr' + 'ddxddrr' + 'd' + (t || 'f') + 'fffff';
+return {
+theme: this.props.theme ?? 'light', palette: this.props.palette ?? 'meadow',
+streak: t ? 13 : 12,
+cells: grid.split('').map((c) => ({ cls: 'cd-cell--' + names[c] })),
+logLabel: t ? 'Logged today' : 'Log today',
+log: () => this.setState({ today: t === 'd' ? '' : 'd' }),
+logMin: () => this.setState({ today: t === 'm' ? '' : 'm' })
+};
+}
+}
+</script>
+</body>
+</html>

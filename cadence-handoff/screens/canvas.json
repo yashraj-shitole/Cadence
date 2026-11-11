@@ -1,0 +1,20 @@
+{"v":3,"createdOnFiles":{"v":1,"at":"2026-11-10T16:10:00Z"},"title":"Cadence App Screens","launch":{"view":"canvas"},"pages":[],
+"boards":{
+"Main.dc.html":{"x":0,"y":0,"w":390,"h":844,"title":"Today","is_interactive":true,"radius":44},
+"Habits.dc.html":{"x":470,"y":0,"w":390,"h":844,"title":"Habits","is_interactive":true,"radius":44},
+"HabitDetail.dc.html":{"x":940,"y":0,"w":390,"h":844,"title":"Habit detail","is_interactive":true,"radius":44},
+"Tasks.dc.html":{"x":1410,"y":0,"w":390,"h":844,"title":"Tasks","is_interactive":true,"radius":44},
+"Notes.dc.html":{"x":1880,"y":0,"w":390,"h":844,"title":"Notes","is_interactive":true,"radius":44},
+"NoteEditor.dc.html":{"x":0,"y":1200,"w":390,"h":844,"title":"Note editor","is_interactive":true,"radius":44},
+"QuickAdd.dc.html":{"x":470,"y":1200,"w":390,"h":844,"title":"Quick add","is_interactive":true,"radius":44},
+"Settings.dc.html":{"x":940,"y":1200,"w":390,"h":844,"title":"Settings","is_interactive":true,"radius":44},
+"TodayDark.dc.html":{"x":1410,"y":1200,"w":390,"h":844,"title":"Today, dark","is_interactive":true,"radius":44},
+"TodayDone.dc.html":{"x":1880,"y":1200,"w":390,"h":844,"title":"Today, all done","is_interactive":true,"radius":44},
+"TodayDusk.dc.html":{"x":2350,"y":1200,"w":390,"h":844,"title":"Today, Dusk palette","is_interactive":true,"radius":44}
+},
+"order":["Main.dc.html","Habits.dc.html","HabitDetail.dc.html","Tasks.dc.html","Notes.dc.html","NoteEditor.dc.html","QuickAdd.dc.html","Settings.dc.html","TodayDark.dc.html","TodayDone.dc.html","TodayDusk.dc.html"],
+"notes":{
+"row1":{"x":0,"y":-300,"text":"Core screens","kind":"title1","maxW":2740},
+"row2":{"x":0,"y":900,"text":"Capture, settings and states","kind":"title1","maxW":2740}
+},
+"designSystems":[{"title":"Cadence Design System","namespace":"cadence","artifact":"https://claude.ai/artifact/5DUY7y9qAptAbhCL742WFA","version":"1794326326-3b9c","copiedAt":"2026-11-10T16:10:00Z"}]}

@@ -1,0 +1,203 @@
+{
+ "default": "meadow",
+ "palettes": [
+  {
+   "id": "meadow",
+   "name": "Meadow",
+   "note": "Fresh green with a yellow wash. Default.",
+   "accent": [
+    "#1d6a3a",
+    "#9fe0a8",
+    "#134d28",
+    "#b4efbb"
+   ],
+   "onAccent": [
+    "#ffffff",
+    "#08240f"
+   ],
+   "glow": {
+    "light": [
+     "#a9d98f",
+     "#eadf8c",
+     "#f6efc8"
+    ],
+    "dark": [
+     "#2f6b3a",
+     "#6a6830",
+     "#3d5a4a"
+    ]
+   },
+   "rest": [
+    "#7a5224",
+    "#e3c38f",
+    "#5e3c14",
+    "#f0d6aa"
+   ]
+  },
+  {
+   "id": "ultramarine",
+   "name": "Ultramarine",
+   "note": "The original cool blue.",
+   "accent": [
+    "#2b3fd4",
+    "#a3afff",
+    "#1c2ea8",
+    "#b7c1ff"
+   ],
+   "onAccent": [
+    "#ffffff",
+    "#0d1230"
+   ],
+   "glow": {
+    "light": [
+     "#8fa0f5",
+     "#a8c79a",
+     "#f3e3b8"
+    ],
+    "dark": [
+     "#3546b0",
+     "#35553a",
+     "#5c5136"
+    ]
+   },
+   "rest": [
+    "#3f5c3d",
+    "#a9c4a6",
+    "#274a2a",
+    "#c4e0c1"
+   ]
+  },
+  {
+   "id": "dusk",
+   "name": "Dusk",
+   "note": "Soft violet with a rose glow.",
+   "accent": [
+    "#6431c2",
+    "#cdb6ff",
+    "#47208f",
+    "#dccbff"
+   ],
+   "onAccent": [
+    "#ffffff",
+    "#1a0b3a"
+   ],
+   "glow": {
+    "light": [
+     "#c4a8f2",
+     "#f0b8d6",
+     "#f6e3cc"
+    ],
+    "dark": [
+     "#4b2f88",
+     "#7b2f5e",
+     "#4c4137"
+    ]
+   },
+   "rest": [
+    "#3f5c3d",
+    "#a9c4a6",
+    "#274a2a",
+    "#c4e0c1"
+   ]
+  },
+  {
+   "id": "rose",
+   "name": "Rose",
+   "note": "Warm raspberry over peach.",
+   "accent": [
+    "#b0205a",
+    "#ffb3cc",
+    "#861343",
+    "#ffc7da"
+   ],
+   "onAccent": [
+    "#ffffff",
+    "#3a0a1d"
+   ],
+   "glow": {
+    "light": [
+     "#f5a9c2",
+     "#f8d0a2",
+     "#fbeacf"
+    ],
+    "dark": [
+     "#8a2d54",
+     "#7a4a2a",
+     "#5a4636"
+    ]
+   },
+   "rest": [
+    "#3f5c3d",
+    "#a9c4a6",
+    "#274a2a",
+    "#c4e0c1"
+   ]
+  },
+  {
+   "id": "lagoon",
+   "name": "Lagoon",
+   "note": "Clear teal with a pale blue wash.",
+   "accent": [
+    "#0b6a74",
+    "#86dbe2",
+    "#07505a",
+    "#a0e8ee"
+   ],
+   "onAccent": [
+    "#ffffff",
+    "#032a2f"
+   ],
+   "glow": {
+    "light": [
+     "#8fd5da",
+     "#a6c6f2",
+     "#e6f1c9"
+    ],
+    "dark": [
+     "#1f6670",
+     "#2f4f88",
+     "#4d5a38"
+    ]
+   },
+   "rest": [
+    "#7a5224",
+    "#e3c38f",
+    "#5e3c14",
+    "#f0d6aa"
+   ]
+  },
+  {
+   "id": "graphite",
+   "name": "Graphite",
+   "note": "Neutral and quiet. Ink-coloured accent.",
+   "accent": [
+    "#2a3140",
+    "#d6dce8",
+    "#12161f",
+    "#e6eaf2"
+   ],
+   "onAccent": [
+    "#ffffff",
+    "#10141c"
+   ],
+   "glow": {
+    "light": [
+     "#ccd1d9",
+     "#dfe3e8",
+     "#eee9df"
+    ],
+    "dark": [
+     "#3a424f",
+     "#2e353f",
+     "#4a453b"
+    ]
+   },
+   "rest": [
+    "#3f5c3d",
+    "#a9c4a6",
+    "#274a2a",
+    "#c4e0c1"
+   ]
+  }
+ ]
+}

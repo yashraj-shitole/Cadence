@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Habits</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="cadence.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Geist:wght@400..700&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div class="cd-stage cd-screen" data-theme="{{theme}}" data-palette="{{palette}}" style="width: 390px; height: 844px">
+<i class="cd-glow cd-glow--2" style="width: 300px; height: 280px; right: -90px; top: -40px"></i>
+<i class="cd-glow cd-glow--1" style="width: 260px; height: 260px; left: -100px; top: 330px"></i>
+<i class="cd-glow cd-glow--3" style="width: 340px; height: 280px; right: -60px; bottom: -60px"></i>
+
+<header class="cd-screen__top">
+<div>
+<div class="cd-screen__date">{{summary}}</div>
+<h1>Habits</h1>
+</div>
+<a class="cd-iconbtn cd-glass" href="QuickAdd.dc.html" aria-label="New habit"><svg class="cd-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg></a>
+</header>
+
+<div class="cd-screen__scroll">
+<sc-for list="{{groups}}" as="g" hint-placeholder-count="3">
+<h2 class="cd-section">{{g.name}} <span>{{g.count}}</span></h2>
+<div class="cd-list">
+<sc-for list="{{g.rows}}" as="h" hint-placeholder-count="2">
+<div class="cd-row cd-glass cd-press {{h.cls}}">
+<button class="cd-check" aria-label="{{h.label}}" onClick="{{h.toggle}}"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></i></button>
+<a class="cd-row__body" href="HabitDetail.dc.html">
+<div class="cd-row__title">{{h.title}}</div>
+<div class="cd-row__sub">{{h.cue}}</div>
+<div class="cd-row__meta"><span>Minimum: {{h.min}}</span></div>
+</a>
+<div class="cd-row__side">
+<div class="cd-week" role="img" aria-label="{{h.weekLabel}}"><sc-for list="{{h.week}}" as="d" hint-placeholder-count="7"><i class="cd-dot {{d.cls}}"></i></sc-for></div>
+<span class="cd-streak"><b>{{h.streak}}</b> day streak</span>
+</div>
+</div>
+</sc-for>
+</div>
+</sc-for>
+
+<div class="cd-glass" style="margin-top: 24px; padding: 14px 16px">
+<div class="cd-legend" style="margin-top: 0"><span><i class="cd-dot cd-dot--done"></i>Done</span><span><i class="cd-dot cd-dot--min"></i>Minimum</span><span><i class="cd-dot cd-dot--rest"></i>Rest</span><span><i class="cd-dot cd-dot--miss"></i>Missed</span></div>
+</div>
+</div>
+
+<div class="cd-screen__tabbar">
+<nav class="cd-tabbar cd-glass cd-glass--raised" aria-label="Main">
+<a class="cd-tab" href="Main.dc.html"><svg class="cd-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg><span>Today</span></a>
+<a class="cd-tab" href="Habits.dc.html" aria-current="page"><svg class="cd-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg><span>Habits</span></a>
+<a class="cd-add" href="QuickAdd.dc.html" aria-label="Quick add"><svg class="cd-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg></a>
+<a class="cd-tab" href="Tasks.dc.html"><svg class="cd-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span>Tasks</span></a>
+<a class="cd-tab" href="Notes.dc.html"><svg class="cd-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4M16 13H8M16 17H8"/></svg><span>Notes</span></a>
+</nav>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"palette":{"editor":"enum","options":["meadow","ultramarine","dusk","rose","lagoon","graphite"],"default":"meadow","section":"Appearance"},"theme":{"editor":"enum","options":["light","dark","hc-light","hc-dark"],"default":"light"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { done: { water: true, stretch: true } };
+}
+renderVals() {
+const s = this.state;
+const names = { d: 'done', m: 'min', r: 'rest', x: 'miss', t: 'today' };
+const words = { d: 'done', m: 'minimum', r: 'rest day', x: 'missed', t: 'today' };
+const groups = [
+{ name: 'Morning', rows: [
+{ id: 'water', title: 'Glass of water', cue: 'Right after waking', min: 'one sip', streak: 46, week: 'ddddddt' },
+{ id: 'stretch', title: 'Stretch', cue: 'Before the first meeting', min: '2 minutes', streak: 31, week: 'dmddrdt' } ] },
+{ name: 'Afternoon', rows: [
+{ id: 'read', title: 'Read 10 pages', cue: 'After chai, on the balcony', min: '1 page', streak: 12, week: 'ddrdxdt' } ] },
+{ name: 'Evening', rows: [
+{ id: 'walk', title: 'Evening walk', cue: 'After dinner', min: '5 minutes', streak: 8, week: 'dddmddt' },
+{ id: 'journal', title: 'Three lines', cue: 'In bed, before the phone', min: '1 line', streak: 19, week: 'xddddrt' } ] }
+];
+let doneN = 0, total = 0;
+const out = groups.map((g) => {
+const rows = g.rows.map((h) => {
+const isDone = !!s.done[h.id];
+total += 1; if (isDone) doneN += 1;
+const wk = h.week.split('').map((c, i) => (i === 6 && isDone) ? 'd' : c);
+return Object.assign({}, h, {
+cls: isDone ? 'is-done' : '', label: 'Log ' + h.title,
+week: wk.map((c) => ({ cls: 'cd-dot--' + names[c] })),
+weekLabel: 'Last 7 days: ' + wk.map((c) => words[c]).join(', '),
+toggle: () => { const d = Object.assign({}, s.done); d[h.id] = !isDone; this.setState({ done: d }); }
+});
+});
+return { name: g.name, rows: rows, count: rows.filter((r) => r.cls).length + ' of ' + rows.length };
+});
+return { theme: this.props.theme ?? 'light', palette: this.props.palette ?? 'meadow', groups: out, summary: doneN + ' of ' + total + ' logged today' };
+}
+}
+</script>
+</body>
+</html>

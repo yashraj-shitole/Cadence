@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Quick add</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="cadence.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Geist:wght@400..700&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div class="cd-stage cd-screen" data-theme="{{theme}}" data-palette="{{palette}}" style="width: 390px; height: 844px">
+<i class="cd-glow cd-glow--1" style="width: 300px; height: 280px; right: -90px; top: -60px"></i>
+<i class="cd-glow cd-glow--3" style="width: 240px; height: 240px; left: -90px; top: 300px"></i>
+<i class="cd-glow cd-glow--2" style="width: 340px; height: 300px; left: 60px; bottom: -80px"></i>
+
+<header class="cd-screen__top" aria-hidden="true">
+<div>
+<div class="cd-screen__date">Tue 10 Nov</div>
+<h1>Today</h1>
+</div>
+</header>
+<div aria-hidden="true">
+<div class="cd-progress"><b>4/8<small>beats done</small></b><span>4 to go</span></div>
+<div class="cd-beats"><i class="cd-beat is-done"></i><i class="cd-beat is-done"></i><i class="cd-beat is-done"></i><i class="cd-beat is-done"></i><i class="cd-beat"></i><i class="cd-beat"></i><i class="cd-beat"></i><i class="cd-beat"></i></div>
+</div>
+
+<a class="cd-scrim" href="Main.dc.html" aria-label="Close quick add"></a>
+
+<div class="cd-screen__sheet">
+<form class="cd-sheet cd-glass cd-glass--raised cd-fade" style="padding-bottom: 40px" aria-label="Quick add" onSubmit="{{stop}}">
+<i class="cd-sheet__grab"></i>
+
+<div class="cd-seg" data-n="3" data-i="{{index}}">
+<i class="cd-seg__thumb"></i>
+<sc-for list="{{types}}" as="t" hint-placeholder-count="3"><button type="button" aria-pressed="{{t.on}}" onClick="{{t.pick}}">{{t.name}}</button></sc-for>
+</div>
+
+<label class="cd-field"><input placeholder="{{placeholder}}" aria-label="Title" value="{{title}}" onChange="{{setTitle}}"></label>
+
+<sc-if value="{{isTask}}" hint-placeholder-val="{{true}}">
+<div class="cd-chips" style="margin: 0 -20px; padding: 4px 20px">
+<button type="button" class="cd-chip is-on"><svg class="cd-icon cd-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Today 5:30 pm</button>
+<button type="button" class="cd-chip"><svg class="cd-icon cd-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 2h4M12 14l3-3"/><circle cx="12" cy="14" r="8"/></svg>25 min</button>
+<button type="button" class="cd-chip"><svg class="cd-icon cd-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/></svg>Priority</button>
+<button type="button" class="cd-chip"><svg class="cd-icon cd-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M12.6 2.6A2 2 0 0 0 11.2 2H4a2 2 0 0 0-2 2v7.2a2 2 0 0 0 .6 1.4l8.7 8.7a2.4 2.4 0 0 0 3.4 0l6.6-6.6a2.4 2.4 0 0 0 0-3.4z"/><circle cx="7.5" cy="7.5" r=".5"/></svg>Tag</button>
+</div>
+</sc-if>
+
+<sc-if value="{{isHabit}}" hint-placeholder-val="{{false}}">
+<div style="display: grid; gap: 8px">
+<label class="cd-field" style="min-height: 48px"><span class="cd-muted" style="font: 500 14px/20px var(--font-text)">Cue</span><input placeholder="After chai, on the balcony" aria-label="Cue" style="font: 400 16px/24px var(--font-text)"></label>
+<label class="cd-field" style="min-height: 48px"><span class="cd-muted" style="font: 500 14px/20px var(--font-text)">Minimum</span><input placeholder="The smallest version that counts" aria-label="Minimum version" style="font: 400 16px/24px var(--font-text)"></label>
+<div class="cd-chips" style="margin: 0 -20px; padding: 4px 20px">
+<button type="button" class="cd-chip">Morning</button>
+<button type="button" class="cd-chip is-on">Afternoon</button>
+<button type="button" class="cd-chip">Evening</button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{isNote}}" hint-placeholder-val="{{false}}">
+<label class="cd-field" style="min-height: 120px; align-items: flex-start; padding-top: 14px"><input placeholder="Start writing…" aria-label="Note body" style="font: 400 16px/24px var(--font-text)"></label>
+</sc-if>
+
+<a class="cd-btn cd-btn--primary cd-btn--block cd-press" href="Main.dc.html">{{action}}</a>
+</form>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"palette":{"editor":"enum","options":["meadow","ultramarine","dusk","rose","lagoon","graphite"],"default":"meadow","section":"Appearance"},"theme":{"editor":"enum","options":["light","dark","hc-light","hc-dark"],"default":"light"},"startType":{"editor":"enum","options":["Task","Habit","Note"],"default":"Task"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { type: props.startType ?? 'Task', title: '' };
+}
+renderVals() {
+const s = this.state;
+const names = ['Task', 'Habit', 'Note'];
+const ph = { Task: 'What needs doing?', Habit: 'What will you repeat?', Note: 'Title' };
+const act = { Task: 'Add task', Habit: 'Add habit', Note: 'Save note' };
+return {
+theme: this.props.theme ?? 'light', palette: this.props.palette ?? 'meadow',
+index: names.indexOf(s.type),
+types: names.map((name) => ({ name: name, on: s.type === name ? 'true' : 'false', pick: () => this.setState({ type: name }) })),
+title: s.title,
+setTitle: (e) => this.setState({ title: e.target.value }),
+stop: (e) => e.preventDefault(),
+placeholder: ph[s.type], action: act[s.type],
+isTask: s.type === 'Task', isHabit: s.type === 'Habit', isNote: s.type === 'Note'
+};
+}
+}
+</script>
+</body>
+</html>

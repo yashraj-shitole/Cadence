@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Today</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="cadence.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Geist:wght@400..700&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div class="cd-stage cd-screen" data-theme="{{theme}}" data-palette="{{palette}}" data-glass="{{surface}}" data-motion="{{motion}}" data-backdrop="{{backdrop}}" style="width: 390px; height: 844px">
+<i class="cd-glow cd-glow--1" style="width: 300px; height: 280px; right: -90px; top: -60px"></i>
+<i class="cd-glow cd-glow--3" style="width: 240px; height: 240px; left: -90px; top: 300px"></i>
+<i class="cd-glow cd-glow--2" style="width: 340px; height: 300px; left: 60px; bottom: -80px"></i>
+
+<header class="cd-screen__top">
+<div>
+<div class="cd-screen__date">Tue 10 Nov</div>
+<h1>Today</h1>
+</div>
+<a class="cd-iconbtn cd-glass" href="Settings.dc.html" aria-label="Settings"><svg class="cd-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 4h-7M10 4H3M21 12h-9M8 12H3M21 20h-5M12 20H3M14 2v4M8 10v4M16 18v4"/></svg></a>
+</header>
+
+<div style="margin-bottom: 20px">
+<div class="cd-progress"><b>{{count}}<small>beats done</small></b><span>{{left}}</span></div>
+<div class="cd-beats" role="progressbar" aria-label="{{count}} beats done">
+<sc-for list="{{beats}}" as="b" hint-placeholder-count="8"><i class="cd-beat {{b.cls}}"></i></sc-for>
+</div>
+</div>
+
+<sc-if value="{{hasNext}}" hint-placeholder-val="{{true}}">
+<section class="cd-nextup cd-glass cd-glass--raised">
+<div class="cd-eyebrow">Next up</div>
+<h3>{{next.title}}</h3>
+<p>{{next.line}}</p>
+<div class="cd-nextup__actions">
+<button class="cd-btn cd-btn--primary cd-press" onClick="{{doNext}}">Mark done</button>
+<button class="cd-btn cd-btn--glass cd-press" onClick="{{later}}">Later</button>
+</div>
+</section>
+</sc-if>
+<sc-if value="{{allDone}}" hint-placeholder-val="{{false}}">
+<section class="cd-nextup cd-glass cd-glass--raised">
+<div class="cd-eyebrow">Next up</div>
+<h3>That's today</h3>
+<p>8 of 8 beats done. Rest well.</p>
+</section>
+</sc-if>
+
+<div class="cd-screen__scroll" style="margin-top: 4px">
+<h2 class="cd-section">Habits <span>{{habitCount}}</span></h2>
+<div class="cd-list">
+<sc-for list="{{habits}}" as="h" hint-placeholder-count="5">
+<div class="cd-row cd-glass cd-press {{h.cls}}">
+<button class="cd-check" aria-label="{{h.label}}" onClick="{{h.toggle}}"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></i></button>
+<div class="cd-row__body">
+<div class="cd-row__title">{{h.title}}</div>
+<div class="cd-row__sub">{{h.cue}}</div>
+</div>
+<div class="cd-row__side">
+<div class="cd-week" role="img" aria-label="{{h.weekLabel}}"><sc-for list="{{h.week}}" as="d" hint-placeholder-count="7"><i class="cd-dot {{d.cls}}"></i></sc-for></div>
+<span class="cd-streak"><b>{{h.streak}}</b> day streak</span>
+</div>
+</div>
+</sc-for>
+</div>
+
+<h2 class="cd-section">Tasks <span>{{taskCount}}</span></h2>
+<div class="cd-list">
+<sc-for list="{{tasks}}" as="t" hint-placeholder-count="3">
+<div class="cd-row cd-glass cd-press {{t.cls}}">
+<button class="cd-check cd-check--task" aria-label="{{t.label}}" onClick="{{t.toggle}}"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></i></button>
+<div class="cd-row__body">
+<div class="cd-row__title">{{t.title}}</div>
+<div class="cd-row__meta">
+<span><svg class="cd-icon cd-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>{{t.due}}</span>
+<span><svg class="cd-icon cd-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 2h4M12 14l3-3"/><circle cx="12" cy="14" r="8"/></svg>{{t.dur}}</span>
+<span class="cd-tag">{{t.tag}}</span>
+</div>
+</div>
+<sc-if value="{{t.flag}}" hint-placeholder-val="{{false}}"><span class="cd-flag" role="img" aria-label="Priority"><svg class="cd-icon cd-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/></svg></span></sc-if>
+</div>
+</sc-for>
+</div>
+</div>
+
+<sc-if value="{{hasToast}}" hint-placeholder-val="{{false}}">
+<div class="cd-screen__toast">
+<div class="cd-toast cd-glass cd-glass--raised cd-enter" role="status"><span>{{toast}}</span><button class="cd-btn cd-btn--quiet" onClick="{{undo}}"><svg class="cd-icon cd-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>Undo</button><i class="cd-toast__time"></i></div>
+</div>
+</sc-if>
+
+<div class="cd-screen__tabbar">
+<nav class="cd-tabbar cd-glass cd-glass--raised" aria-label="Main">
+<a class="cd-tab" href="Main.dc.html" aria-current="page"><svg class="cd-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg><span>Today</span></a>
+<a class="cd-tab" href="Habits.dc.html"><svg class="cd-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg><span>Habits</span></a>
+<a class="cd-add" href="QuickAdd.dc.html" aria-label="Quick add"><svg class="cd-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg></a>
+<a class="cd-tab" href="Tasks.dc.html"><svg class="cd-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span>Tasks</span></a>
+<a class="cd-tab" href="Notes.dc.html"><svg class="cd-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4M16 13H8M16 17H8"/></svg><span>Notes</span></a>
+</nav>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"palette":{"editor":"enum","options":["meadow","ultramarine","dusk","rose","lagoon","graphite"],"default":"meadow","section":"Appearance"},"theme":{"editor":"enum","options":["light","dark","hc-light","hc-dark"],"default":"light","section":"Appearance"},"surface":{"editor":"enum","options":["frosted","solid"],"default":"frosted","section":"Appearance"},"backdrop":{"editor":"enum","options":["glow","soft","plain"],"default":"glow","section":"Appearance"},"motion":{"editor":"enum","options":["off","subtle","standard","expressive"],"default":"standard","section":"Feel"},"startDone":{"editor":"int","min":0,"max":8,"default":4,"section":"Demo"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+const n = props.startDone ?? 4;
+const ids = ['water', 'stretch', 'read', 'walk', 'journal', 'invoice', 'tickets', 'gift'];
+const pre = ['water', 'stretch', 'tickets', 'walk', 'journal', 'gift', 'invoice', 'read'];
+const done = {};
+pre.slice(0, n).forEach((id) => { done[id] = true; });
+this.state = { done: done, order: ids.filter((id) => id !== 'water' && id !== 'stretch'), toast: null, last: null };
+this.timer = null;
+}
+componentWillUnmount() { clearTimeout(this.timer); }
+data() {
+return {
+habits: [
+{ id: 'water', title: 'Glass of water', cue: 'Right after waking', streak: 46, week: 'ddddddt' },
+{ id: 'stretch', title: 'Stretch', cue: 'Before the first meeting', streak: 31, week: 'dmddrdt' },
+{ id: 'read', title: 'Read 10 pages', cue: 'After chai, on the balcony', min: '1 page', streak: 12, week: 'ddrdxdt' },
+{ id: 'walk', title: 'Evening walk', cue: 'After dinner', min: '5 minutes', streak: 8, week: 'dddmddt' },
+{ id: 'journal', title: 'Three lines', cue: 'In bed, before the phone', min: '1 line', streak: 19, week: 'xddddrt' }
+],
+tasks: [
+{ id: 'invoice', title: 'Send invoice to Meera', due: '5:30 pm', dur: '25 min', tag: 'Work', flag: true },
+{ id: 'tickets', title: 'Book train tickets', due: 'Today', dur: '10 min', tag: 'Home', flag: false },
+{ id: 'gift', title: 'Order gift for Aai', due: '8:00 pm', dur: '15 min', tag: 'Home', flag: false }
+]
+};
+}
+toggle(id, title) {
+const done = Object.assign({}, this.state.done);
+const was = !!done[id];
+done[id] = !was;
+clearTimeout(this.timer);
+if (was) { this.setState({ done: done, toast: null }); return; }
+this.setState({ done: done, toast: title + ' done', last: id });
+this.timer = setTimeout(() => this.setState({ toast: null }), 5000);
+}
+renderVals() {
+const p = this.props, s = this.state, d = this.data();
+const names = { d: 'done', m: 'min', r: 'rest', x: 'miss', t: 'today' };
+const words = { d: 'done', m: 'minimum', r: 'rest day', x: 'missed', t: 'today' };
+const all = d.habits.concat(d.tasks);
+const byId = {};
+all.forEach((x) => { byId[x.id] = x; });
+const total = all.length;
+const doneN = all.filter((x) => s.done[x.id]).length;
+const nextId = s.order.find((id) => !s.done[id]) || all.map((x) => x.id).find((id) => !s.done[id]);
+const nx = nextId ? byId[nextId] : null;
+const beats = [];
+for (let i = 0; i < total; i++) beats.push({ cls: i < doneN ? 'is-done' : '' });
+return {
+theme: p.theme ?? 'light', palette: p.palette ?? 'meadow', surface: p.surface ?? 'frosted', motion: p.motion ?? 'standard', backdrop: p.backdrop ?? 'glow',
+count: doneN + '/' + total,
+left: doneN === total ? 'All done' : (total - doneN) + ' to go',
+beats: beats,
+hasNext: !!nx, allDone: !nx,
+next: nx ? { title: nx.title, line: nx.cue ? nx.cue + (nx.min ? ' · Minimum: ' + nx.min : '') : nx.due + ' · ' + nx.dur } : { title: '', line: '' },
+doNext: () => { if (nx) this.toggle(nx.id, nx.title); },
+later: () => { if (nx) this.setState({ order: s.order.filter((id) => id !== nx.id).concat([nx.id]) }); },
+habitCount: d.habits.filter((h) => s.done[h.id]).length + ' of ' + d.habits.length,
+taskCount: d.tasks.filter((t) => s.done[t.id]).length + ' of ' + d.tasks.length,
+habits: d.habits.map((h) => {
+const wk = h.week.split('').map((c, i) => (i === 6 && s.done[h.id]) ? 'd' : c);
+return Object.assign({}, h, {
+cls: s.done[h.id] ? 'is-done' : '', label: 'Log ' + h.title,
+week: wk.map((c) => ({ cls: 'cd-dot--' + names[c] })),
+weekLabel: 'Last 7 days: ' + wk.map((c) => words[c]).join(', '),
+toggle: () => this.toggle(h.id, h.title)
+});
+}),
+tasks: d.tasks.map((t) => Object.assign({}, t, { cls: s.done[t.id] ? 'is-done' : '', label: 'Complete ' + t.title, toggle: () => this.toggle(t.id, t.title) })),
+hasToast: !!s.toast, toast: s.toast || '',
+undo: () => { const done = Object.assign({}, s.done); done[s.last] = false; clearTimeout(this.timer); this.setState({ done: done, toast: null }); }
+};
+}
+}
+</script>
+</body>
+</html>

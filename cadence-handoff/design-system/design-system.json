@@ -1,0 +1,24 @@
+{
+  "v": 3,
+  "assetGroups": {},
+  "blobs": {},
+  "createdOnFiles": {
+    "at": "2026-11-10T15:58:00Z",
+    "v": 1
+  },
+  "docs": {
+    "sections": []
+  },
+  "groups": [],
+  "lastChange": {
+    "at": "2026-11-10T16:08:00Z",
+    "by": "Yashraj",
+    "note": "Six colour palettes (Meadow default) selectable in Settings; PalettePicker component added.",
+    "via": "Claude"
+  },
+  "layout": "files",
+  "libraries": [],
+  "namespace": "Cadence",
+  "sections": {},
+  "title": "Cadence Design System"
+}

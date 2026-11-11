@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Settings</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="cadence.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Geist:wght@400..700&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div class="cd-stage cd-screen" data-theme="{{themeAttr}}" data-palette="{{paletteAttr}}" data-glass="{{glassAttr}}" data-backdrop="{{backdropAttr}}" data-motion="{{motionAttr}}" style="width: 390px; height: 844px">
+<i class="cd-glow cd-glow--2" style="width: 300px; height: 260px; left: -90px; top: -50px"></i>
+<i class="cd-glow cd-glow--1" style="width: 280px; height: 300px; right: -110px; top: 250px"></i>
+<i class="cd-glow cd-glow--3" style="width: 340px; height: 280px; left: -40px; bottom: -70px"></i>
+
+<header class="cd-screen__top">
+<a class="cd-iconbtn cd-glass" href="Main.dc.html" aria-label="Back to Today"><svg class="cd-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></a>
+</header>
+<h1 style="margin: 0 0 4px; font: 700 32px/36px var(--font-display); letter-spacing: -.02em">Settings</h1>
+
+<div class="cd-screen__scroll" style="padding-bottom: 48px">
+<h2 class="cd-section">Feel</h2>
+<div class="cd-glass cd-group">
+<div class="cd-setting--stack">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><span class="cd-setting__title">Motion</span><span class="cd-setting__value">{{motionNote}}</span></div>
+<div class="cd-level" data-v="{{motion}}">
+<div class="cd-level__track"><i class="cd-level__fill"></i><div class="cd-level__stops"><i></i><i></i><i></i><i></i></div><i class="cd-level__thumb"></i><input type="range" min="0" max="3" step="1" value="{{motion}}" aria-label="Motion intensity" onChange="{{setMotion}}"></div>
+<div class="cd-level__labels"><sc-for list="{{motionLabels}}" as="l" hint-placeholder-count="4"><span class="{{l.cls}}">{{l.name}}</span></sc-for></div>
+</div>
+</div>
+<div class="cd-setting--stack">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><span class="cd-setting__title">Haptics</span><span class="cd-setting__value">{{hapticNote}}</span></div>
+<div class="cd-level" data-v="{{haptics}}">
+<div class="cd-level__track"><i class="cd-level__fill"></i><div class="cd-level__stops"><i></i><i></i><i></i><i></i></div><i class="cd-level__thumb"></i><input type="range" min="0" max="3" step="1" value="{{haptics}}" aria-label="Haptic intensity" onChange="{{setHaptics}}"></div>
+<div class="cd-level__labels"><sc-for list="{{hapticLabels}}" as="l" hint-placeholder-count="4"><span class="{{l.cls}}">{{l.name}}</span></sc-for></div>
+</div>
+</div>
+<div class="cd-setting"><div class="cd-setting__body"><div class="cd-setting__title">Completion only</div><div class="cd-setting__sub">Feel a beat finish, nothing else</div></div><button class="cd-toggle" role="switch" aria-checked="{{onlyDone}}" aria-label="Completion-only haptics" onClick="{{flipOnlyDone}}"></button></div>
+<div class="cd-setting"><div class="cd-setting__body"><div class="cd-setting__title">Try it</div><div class="cd-setting__sub">Tap to feel the current settings</div></div><button class="cd-check {{tryCls}}" aria-label="Try a completion" onClick="{{tryIt}}"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></i></button></div>
+</div>
+
+<h2 class="cd-section">Appearance</h2>
+<div class="cd-glass cd-group">
+<div class="cd-setting--stack">
+<span class="cd-setting__title">Theme</span>
+<div class="cd-seg" data-n="3" data-i="{{themeIndex}}"><i class="cd-seg__thumb"></i><sc-for list="{{themes}}" as="t" hint-placeholder-count="3"><button aria-pressed="{{t.on}}" onClick="{{t.pick}}">{{t.name}}</button></sc-for></div>
+</div>
+<div class="cd-setting--stack">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><span class="cd-setting__title">Colour palette</span><span class="cd-setting__value">{{paletteNote}}</span></div>
+<div class="cd-palettes" role="group" aria-label="Colour palette"><sc-for list="{{palettes}}" as="p" hint-placeholder-count="6"><button class="cd-swatch cd-press" data-p="{{p.id}}" aria-pressed="{{p.on}}" aria-label="{{p.name}}" onClick="{{p.pick}}"><span class="cd-swatch__tile"><i class="cd-swatch__tick"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></i></span><span class="cd-swatch__name">{{p.name}}</span></button></sc-for></div>
+</div>
+<div class="cd-setting--stack">
+<span class="cd-setting__title">Backdrop</span>
+<div class="cd-seg" data-n="3" data-i="{{backdropIndex}}"><i class="cd-seg__thumb"></i><sc-for list="{{backdrops}}" as="t" hint-placeholder-count="3"><button aria-pressed="{{t.on}}" onClick="{{t.pick}}">{{t.name}}</button></sc-for></div>
+</div>
+<div class="cd-setting"><div class="cd-setting__body"><div class="cd-setting__title">Reduce transparency</div><div class="cd-setting__sub">Solid surfaces instead of glass</div></div><button class="cd-toggle" role="switch" aria-checked="{{solid}}" aria-label="Reduce transparency" onClick="{{flipSolid}}"></button></div>
+<div class="cd-setting"><div class="cd-setting__body"><div class="cd-setting__title">High contrast</div><div class="cd-setting__sub">Stronger text and outlined surfaces</div></div><button class="cd-toggle" role="switch" aria-checked="{{hc}}" aria-label="High contrast" onClick="{{flipHc}}"></button></div>
+</div>
+
+<h2 class="cd-section">Rhythm</h2>
+<div class="cd-glass cd-group">
+<button class="cd-setting cd-press"><svg class="cd-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><div class="cd-setting__body"><div class="cd-setting__title">Daily reminder</div><div class="cd-setting__sub">One a day, never more</div></div><span class="cd-setting__value">8:00 am<svg class="cd-icon cd-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span></button>
+<div class="cd-setting"><div class="cd-setting__body"><div class="cd-setting__title">Weekend rest days</div><div class="cd-setting__sub">Sat and Sun keep every streak</div></div><button class="cd-toggle" role="switch" aria-checked="{{weekend}}" aria-label="Weekend rest days" onClick="{{flipWeekend}}"></button></div>
+<div class="cd-setting--stack">
+<span class="cd-setting__title">Week starts on</span>
+<div class="cd-seg" data-n="2" data-i="{{weekIndex}}"><i class="cd-seg__thumb"></i><sc-for list="{{weekStarts}}" as="t" hint-placeholder-count="2"><button aria-pressed="{{t.on}}" onClick="{{t.pick}}">{{t.name}}</button></sc-for></div>
+</div>
+</div>
+
+<h2 class="cd-section">Data</h2>
+<div class="cd-glass cd-group">
+<button class="cd-setting cd-press"><div class="cd-setting__body"><div class="cd-setting__title">Export data</div><div class="cd-setting__sub">Habits, tasks and notes as one file</div></div><svg class="cd-icon cd-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+<button class="cd-setting cd-press"><div class="cd-setting__body"><div class="cd-setting__title" style="color: var(--danger)">Erase all data</div><div class="cd-setting__sub">Asks you to confirm first</div></div></button>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { motion: 2, haptics: 2, onlyDone: false, theme: 0, palette: 0, backdrop: 0, solid: false, hc: false, weekend: true, week: 0, tried: false };
+}
+buzz(strength) {
+const s = this.state;
+const level = [0, 0.5, 0.8, 1][s.haptics];
+if (level > 0 && typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(Math.round(18 * strength * level));
+}
+renderVals() {
+const s = this.state;
+const seg = (names, key) => names.map((name, i) => ({ name: name, on: s[key] === i ? 'true' : 'false', pick: () => { this.setState({ [key]: i }); if (!s.onlyDone) this.buzz(0.4); } }));
+const labels = (names, v) => names.map((name, i) => ({ name: name, cls: i === v ? 'is-on' : '' }));
+const flip = (key) => () => { this.setState({ [key]: !s[key] }); if (!s.onlyDone) this.buzz(0.4); };
+const palettes = [['meadow', 'Meadow', 'Fresh green, yellow wash'], ['ultramarine', 'Ultramarine', 'Cool blue'], ['dusk', 'Dusk', 'Soft violet, rose glow'], ['rose', 'Rose', 'Raspberry over peach'], ['lagoon', 'Lagoon', 'Clear teal'], ['graphite', 'Graphite', 'Neutral and quiet']];
+const dark = s.theme === 1;
+return {
+themeAttr: (s.hc ? 'hc-' : '') + (dark ? 'dark' : 'light'),
+glassAttr: s.solid ? 'solid' : 'frosted',
+paletteAttr: palettes[s.palette][0], paletteNote: palettes[s.palette][2],
+palettes: palettes.map((p, i) => ({ id: p[0], name: p[1], on: s.palette === i ? 'true' : 'false', pick: () => { this.setState({ palette: i }); if (!s.onlyDone) this.buzz(0.4); } })),
+backdropAttr: ['glow', 'soft', 'plain'][s.backdrop],
+motionAttr: ['off', 'subtle', 'standard', 'expressive'][s.motion],
+motion: s.motion, haptics: s.haptics,
+motionNote: ['Cross-fades only', 'Shorter travel, no overshoot', 'Default', 'More travel, 15% longer'][s.motion],
+hapticNote: ['Silent', 'Half strength', 'Default', 'Full strength'][s.haptics],
+motionLabels: labels(['Off', 'Subtle', 'Standard', 'Expressive'], s.motion),
+hapticLabels: labels(['Off', 'Soft', 'Balanced', 'Firm'], s.haptics),
+setMotion: (e) => this.setState({ motion: Number(e.target.value) }),
+setHaptics: (e) => { const v = Number(e.target.value); this.setState({ haptics: v }, () => this.buzz(1)); },
+onlyDone: s.onlyDone ? 'true' : 'false', flipOnlyDone: () => this.setState({ onlyDone: !s.onlyDone }),
+tryCls: s.tried ? 'is-done' : '', tryIt: () => { this.setState({ tried: !s.tried }); this.buzz(1); },
+themes: seg(['Light', 'Dark', 'Auto'], 'theme'), themeIndex: s.theme,
+backdrops: seg(['Glow', 'Soft', 'Plain'], 'backdrop'), backdropIndex: s.backdrop,
+weekStarts: seg(['Monday', 'Sunday'], 'week'), weekIndex: s.week,
+solid: s.solid ? 'true' : 'false', flipSolid: flip('solid'),
+hc: s.hc ? 'true' : 'false', flipHc: flip('hc'),
+weekend: s.weekend ? 'true' : 'false', flipWeekend: flip('weekend')
+};
+}
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Tasks</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="cadence.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Geist:wght@400..700&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div class="cd-stage cd-screen" data-theme="{{theme}}" data-palette="{{palette}}" style="width: 390px; height: 844px">
+<i class="cd-glow cd-glow--3" style="width: 300px; height: 260px; right: -80px; top: -50px"></i>
+<i class="cd-glow cd-glow--2" style="width: 260px; height: 260px; left: -100px; top: 280px"></i>
+<i class="cd-glow cd-glow--1" style="width: 340px; height: 300px; right: -70px; bottom: -40px"></i>
+
+<header class="cd-screen__top">
+<div>
+<div class="cd-screen__date">{{summary}}</div>
+<h1>Tasks</h1>
+</div>
+<button class="cd-iconbtn cd-glass" aria-label="Search tasks"><svg class="cd-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></button>
+</header>
+
+<div class="cd-chips" style="margin: 0 -20px 4px; padding: 4px 20px">
+<sc-for list="{{filters}}" as="f" hint-placeholder-count="4"><button class="cd-chip {{f.cls}}" aria-pressed="{{f.on}}" onClick="{{f.pick}}">{{f.name}}</button></sc-for>
+</div>
+
+<div class="cd-screen__scroll">
+<sc-for list="{{groups}}" as="g" hint-placeholder-count="3">
+<h2 class="cd-section">{{g.name}} <span>{{g.count}}</span></h2>
+<div class="cd-list">
+<sc-for list="{{g.rows}}" as="t" hint-placeholder-count="2">
+<div class="cd-row cd-glass cd-press {{t.cls}}">
+<button class="cd-check cd-check--task" aria-label="{{t.label}}" onClick="{{t.toggle}}"><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></i></button>
+<div class="cd-row__body">
+<div class="cd-row__title">{{t.title}}</div>
+<div class="cd-row__meta">
+<span><svg class="cd-icon cd-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>{{t.due}}</span>
+<span><svg class="cd-icon cd-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 2h4M12 14l3-3"/><circle cx="12" cy="14" r="8"/></svg>{{t.dur}}</span>
+<span class="cd-tag">{{t.tag}}</span>
+</div>
+</div>
+<sc-if value="{{t.flag}}" hint-placeholder-val="{{false}}"><span class="cd-flag" role="img" aria-label="Priority"><svg class="cd-icon cd-icon--sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/></svg></span></sc-if>
+</div>
+</sc-for>
+</div>
+</sc-for>
+</div>
+
+<div class="cd-screen__tabbar">
+<nav class="cd-tabbar cd-glass cd-glass--raised" aria-label="Main">
+<a class="cd-tab" href="Main.dc.html"><svg class="cd-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg><span>Today</span></a>
+<a class="cd-tab" href="Habits.dc.html"><svg class="cd-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg><span>Habits</span></a>
+<a class="cd-add" href="QuickAdd.dc.html" aria-label="Quick add"><svg class="cd-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg></a>
+<a class="cd-tab" href="Tasks.dc.html" aria-current="page"><svg class="cd-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span>Tasks</span></a>
+<a class="cd-tab" href="Notes.dc.html"><svg class="cd-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4M16 13H8M16 17H8"/></svg><span>Notes</span></a>
+</nav>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"palette":{"editor":"enum","options":["meadow","ultramarine","dusk","rose","lagoon","graphite"],"default":"meadow","section":"Appearance"},"theme":{"editor":"enum","options":["light","dark","hc-light","hc-dark"],"default":"light"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { filter: 'All', done: { tickets: true, rent: true } };
+}
+renderVals() {
+const s = this.state;
+const tasks = [
+{ id: 'invoice', title: 'Send invoice to Meera', due: '5:30 pm', dur: '25 min', tag: 'Work', flag: true, when: 'Today' },
+{ id: 'gift', title: 'Order gift for Aai', due: '8:00 pm', dur: '15 min', tag: 'Home', flag: false, when: 'Today' },
+{ id: 'tickets', title: 'Book train tickets', due: 'Today', dur: '10 min', tag: 'Home', flag: false, when: 'Today' },
+{ id: 'deck', title: 'Draft the review deck', due: 'Thu', dur: '1 hr', tag: 'Work', flag: true, when: 'This week' },
+{ id: 'dentist', title: 'Call the dentist', due: 'Fri', dur: '5 min', tag: 'Health', flag: false, when: 'This week' },
+{ id: 'plants', title: 'Repot the tulsi', due: 'Sat', dur: '20 min', tag: 'Home', flag: false, when: 'This week' },
+{ id: 'rent', title: 'Pay rent', due: 'Mon', dur: '5 min', tag: 'Home', flag: false, when: 'This week' }
+];
+const shown = tasks.filter((t) => s.filter === 'All' || t.tag === s.filter);
+const row = (t) => Object.assign({}, t, {
+cls: s.done[t.id] ? 'is-done' : '', label: 'Complete ' + t.title,
+toggle: () => { const d = Object.assign({}, s.done); d[t.id] = !d[t.id]; this.setState({ done: d }); }
+});
+const groups = ['Today', 'This week'].map((name) => {
+const rows = shown.filter((t) => t.when === name && !s.done[t.id]).map(row);
+return { name: name, rows: rows, count: rows.length + ' open' };
+});
+const doneRows = shown.filter((t) => s.done[t.id]).map(row);
+groups.push({ name: 'Done', rows: doneRows, count: String(doneRows.length) });
+const open = tasks.filter((t) => !s.done[t.id]).length;
+return {
+theme: this.props.theme ?? 'light', palette: this.props.palette ?? 'meadow',
+summary: open + ' open · ' + (tasks.length - open) + ' done',
+filters: ['All', 'Work', 'Home', 'Health'].map((name) => ({ name: name, on: s.filter === name ? 'true' : 'false', cls: s.filter === name ? 'is-on' : '', pick: () => this.setState({ filter: name }) })),
+groups: groups.filter((g) => g.rows.length > 0)
+};
+}
+}
+</script>
+</body>
+</html>
