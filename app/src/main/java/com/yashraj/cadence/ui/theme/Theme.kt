@@ -102,6 +102,9 @@ fun resolveColors(settings: Settings, systemDark: Boolean): CadenceColors {
 }
 
 val LocalCadence = compositionLocalOf<CadenceColors> { error("CadenceTheme is missing") }
+
+/** The same palette and settings in the opposite theme, for small glass that flips to stay legible over contrasting content. */
+val LocalCadenceFlipped = compositionLocalOf<CadenceColors> { error("CadenceTheme is missing") }
 val LocalContentColor = compositionLocalOf { Color.Unspecified }
 
 /** Shorthand used by every component: `Cadence.colors.accent`. */
@@ -119,9 +122,13 @@ fun CadenceTheme(settings: Settings, systemReduceMotion: Boolean, content: @Comp
     val colors = remember(settings.theme, settings.palette, settings.highContrast, settings.reduceTransparency, settings.backdrop, systemDark) {
         resolveColors(settings, systemDark)
     }
+    val flipped = remember(settings.theme, settings.palette, settings.highContrast, settings.reduceTransparency, settings.backdrop, systemDark) {
+        resolveColors(settings.copy(theme = if (colors.isDark) ThemeMode.Light else ThemeMode.Dark), systemDark)
+    }
     val motion = remember(settings.motion, systemReduceMotion) { Motion.forLevel(if (systemReduceMotion) 0 else settings.motion) }
     CompositionLocalProvider(
         LocalCadence provides colors,
+        LocalCadenceFlipped provides flipped,
         LocalMotion provides motion,
         LocalContentColor provides colors.ink,
         content = content,

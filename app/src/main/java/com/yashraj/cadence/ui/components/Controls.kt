@@ -23,6 +23,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -215,6 +221,42 @@ fun CTag(text: String, modifier: Modifier = Modifier) {
 }
 
 /** Segmented control: the thumb slides with `ease-in-out`, the label colours cross-fade. */
+/**
+ * Tracks whether the control is being touched without taking the touch, so its own gestures are unaffected.
+ */
+private fun Modifier.trackPress(onPressed: (Boolean) -> Unit): Modifier = pointerInput(Unit) {
+    awaitPointerEventScope {
+        while (true) {
+            awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+            onPressed(true)
+            waitForUpOrCancellation(PointerEventPass.Initial)
+            onPressed(false)
+        }
+    }
+}
+
+/**
+ * The part of a control that moves (slider thumb, toggle knob, selector thumb) rests quiet and solid, then lifts into
+ * liquid glass while it is touched: it swells a little, like a gel, and its solid fill thins out so the lens and the
+ * light show and the value underneath can be seen through it.
+ */
+@Composable
+private fun Modifier.liftIntoGlass(shape: Shape, lift: Float): Modifier =
+    this
+        .graphicsLayer {
+            val grow = 1f + 0.16f * lift
+            scaleX = grow
+            scaleY = grow
+        }
+        .then(if (lift > 0.01f) Modifier.glass(shape, raised = true, materialize = { lift }) else Modifier)
+
+@Composable
+private fun rememberLift(pressed: Boolean): Float {
+    val motion = Cadence.motion
+    val lift by animateFloatAsState(if (pressed) 1f else 0f, motion.fade(Dur.base, Ease.easeOut), label = "lift")
+    return lift
+}
+
 @Composable
 fun CSegmented(
     options: List<String>,
@@ -229,9 +271,12 @@ fun CSegmented(
     val trackShape = RoundedCornerShape(Radius.control)
     val thumbShape = RoundedCornerShape(12.dp)
     val position by animateFloatAsState(selected.toFloat(), motion.move(Dur.base, Ease.easeInOut), label = "segThumb")
+    var segPressed by remember { mutableStateOf(false) }
+    val segLift = rememberLift(segPressed)
     Box(
         modifier
             .fillMaxWidth()
+            .trackPress { segPressed = it }
             .background(colors.track, trackShape)
             .then(if (colors.highContrast) Modifier.border(1.dp, colors.controlEdge, trackShape) else Modifier)
             .padding(4.dp)
@@ -243,7 +288,8 @@ fun CSegmented(
                 .height(40.dp)
                 .graphicsLayer { translationX = position * size.width }
                 .thumbShadow(colors.shadows.thumb, thumbShape)
-                .background(colors.surfaceSolidRaised, thumbShape)
+                .liftIntoGlass(thumbShape, segLift)
+                .background(colors.surfaceSolidRaised.copy(alpha = 1f - 0.9f * segLift), thumbShape)
                 .then(if (colors.highContrast) Modifier.border(2.dp, colors.accent, thumbShape) else Modifier),
         )
         Row(Modifier.fillMaxWidth()) {
@@ -291,8 +337,11 @@ fun CToggle(
     val trackEdge by animateColorAsState(if (checked) colors.accent else colors.controlEdge, motion.fade(Dur.quick), label = "toggleEdge")
     val knobColor by animateColorAsState(if (checked) colors.onAccent else colors.controlEdge, motion.fade(Dur.quick), label = "toggleKnob")
     val knobX by animateFloatAsState(if (checked) 20f else 0f, motion.move(Dur.base, motion.settle), label = "toggleX")
+    var togglePressed by remember { mutableStateOf(false) }
+    val knobLift = rememberLift(togglePressed)
     Box(
         modifier
+            .trackPress { togglePressed = it }
             // The 60dp target is 4dp wider than the 52dp track; pull it out so the track sits flush with the row padding.
             .offset(x = 4.dp)
             .size(width = 60.dp, height = Sizes.tapMin)
@@ -322,7 +371,8 @@ fun CToggle(
                     .offset(x = (4.5f + knobX).dp, y = 4.5.dp)
                     .size(23.dp)
                     .then(if (checked) Modifier.thumbShadow(colors.shadows.thumb, CircleShape) else Modifier)
-                    .background(knobColor, CircleShape),
+                    .liftIntoGlass(CircleShape, knobLift)
+                    .background(knobColor.copy(alpha = knobColor.alpha * (1f - 0.88f * knobLift)), CircleShape),
             )
         }
     }
@@ -348,6 +398,8 @@ fun CLevelSlider(
     val currentChange by rememberUpdatedState(onLevelChange)
     val thumbPosition by animateFloatAsState(level.toFloat(), motion.move(Dur.base, motion.settle), label = "levelThumb")
     val trackShape = RoundedCornerShape(Radius.pill)
+    var thumbPressed by remember { mutableStateOf(false) }
+    val thumbLift = rememberLift(thumbPressed)
     Column(modifier.alpha(if (enabled) 1f else 0.5f), verticalArrangement = Arrangement.spacedBy(Space.s2)) {
         BoxWithConstraints(
             Modifier
@@ -363,6 +415,7 @@ fun CLevelSlider(
                         true
                     }
                 }
+                .trackPress { if (enabled) thumbPressed = it }
                 .pointerInput(enabled) {
                     if (!enabled) return@pointerInput
                     val thumb = with(density) { 28.dp.toPx() }
@@ -410,7 +463,8 @@ fun CLevelSlider(
                     .offset(x = usable * (thumbPosition / 3f))
                     .size(28.dp)
                     .thumbShadow(colors.shadows.thumb, CircleShape)
-                    .background(colors.surfaceSolidRaised, CircleShape)
+                    .liftIntoGlass(CircleShape, thumbLift)
+                    .background(colors.surfaceSolidRaised.copy(alpha = 1f - 0.9f * thumbLift), CircleShape)
                     .border(2.dp, colors.accent, CircleShape),
             )
         }

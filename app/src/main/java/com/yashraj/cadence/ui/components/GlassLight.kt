@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -35,6 +36,24 @@ import kotlin.math.hypot
 class GlassLight {
     var direction by mutableStateOf(GlassLightMath.Rest)
         internal set
+
+    /** Extra turn, in radians, while the light is travelling once around the glass; 0 at rest. */
+    var sweepAngle by mutableFloatStateOf(0f)
+        private set
+
+    /**
+     * The light travels once around every tile's silhouette and settles back where it was, as it does when an iPhone
+     * is unlocked. Used when the app comes back on screen; never on a page change, which would be a distraction.
+     */
+    suspend fun sweep() {
+        try {
+            androidx.compose.animation.core.animate(0f, (2.0 * Math.PI).toFloat(), animationSpec = tween(1100, easing = Ease.easeInOut)) { value, _ ->
+                sweepAngle = value
+            }
+        } finally {
+            sweepAngle = 0f
+        }
+    }
 }
 
 val LocalGlassLight = staticCompositionLocalOf { GlassLight() }

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -71,6 +72,14 @@ fun ActionMenu(expanded: Boolean, onDismiss: () -> Unit, items: List<MenuItem>) 
         Column(
             Modifier
                 .width(200.dp)
+                // The bubble pops open from the button it came from, at the top right.
+                .graphicsLayer {
+                    transformOrigin = androidx.compose.ui.graphics.TransformOrigin(1f, 0f)
+                    val s = 1f - (1f - appear.value) * 0.4f * motion.m
+                    scaleX = s
+                    scaleY = s
+                    alpha = (appear.value * 2.2f).coerceAtMost(1f)
+                }
                 .pointerInput(Unit) { detectTapGestures { } }
                 .glass(shape, raised = true, materialize = { appear.value })
                 .padding(vertical = Space.s2),

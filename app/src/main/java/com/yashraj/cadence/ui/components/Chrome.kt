@@ -16,6 +16,12 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import com.yashraj.cadence.ui.theme.LocalCadenceFlipped
+import com.yashraj.cadence.ui.theme.LocalCadence
+import kotlinx.coroutines.launch
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -39,6 +45,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.boundsInParent
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -85,6 +93,24 @@ fun CTabBar(
     onAdd: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // Small floating glass reads what is behind it and flips light/dark when that content turns the other way.
+    val base = Cadence.colors
+    val adapt = rememberGlassAdapt(canFlip = true, themeIsDark = base.isDark)
+    val colors = if (adapt.flipped && !base.solidSurfaces) LocalCadenceFlipped.current else base
+    androidx.compose.runtime.CompositionLocalProvider(LocalCadence provides colors) {
+        TabBarBody(selected, onSelect, addOpen, onAdd, adapt, modifier)
+    }
+}
+
+@Composable
+private fun TabBarBody(
+    selected: TabId?,
+    onSelect: (TabId) -> Unit,
+    addOpen: Boolean,
+    onAdd: () -> Unit,
+    adapt: GlassAdapt,
+    modifier: Modifier = Modifier,
+) {
     val colors = Cadence.colors
     val motion = Cadence.motion
     val haptics = LocalHaptics.current
@@ -93,17 +119,48 @@ fun CTabBar(
         animationSpec = motion.move(Dur.quick, motion.settle),
         label = "addRotation",
     )
-    Row(
+    // The selection is a glass capsule that slides between tabs and stretches as it goes: its two edges spring at
+    // different speeds, so it shape-shifts from one tab to the next instead of jumping.
+    val bounds = remember { androidx.compose.runtime.mutableStateMapOf<TabId, androidx.compose.ui.geometry.Rect>() }
+    val target = selected?.let { bounds[it] }
+    val left = remember { androidx.compose.animation.core.Animatable(0f) }
+    val right = remember { androidx.compose.animation.core.Animatable(0f) }
+    var placed by remember { mutableStateOf(false) }
+    androidx.compose.runtime.LaunchedEffect(target, motion.off) {
+        if (target == null) return@LaunchedEffect
+        if (!placed || motion.off) {
+            left.snapTo(target.left)
+            right.snapTo(target.right)
+            placed = true
+        } else {
+            launch { left.animateTo(target.left, androidx.compose.animation.core.spring(dampingRatio = 0.72f, stiffness = 420f)) }
+            launch { right.animateTo(target.right, androidx.compose.animation.core.spring(dampingRatio = 0.72f, stiffness = 210f)) }
+        }
+    }
+    val tabDensity = androidx.compose.ui.platform.LocalDensity.current
+    Box(
         modifier
             .fillMaxWidth()
             .height(Sizes.tabbarHeight)
-            .glass(RoundedCornerShape(Radius.pill), raised = true, blurred = true, interactive = true)
+            .glass(RoundedCornerShape(Radius.pill), raised = true, blurred = true, interactive = true, adapt = adapt)
             .padding(horizontal = Space.s2)
             .semantics { contentDescription = "Main" },
-        verticalAlignment = Alignment.CenterVertically,
     ) {
-        TabItem(TabId.Today, selected, onSelect)
-        TabItem(TabId.Habits, selected, onSelect)
+        if (selected != null && placed) {
+            Box(
+                Modifier
+                    .align(Alignment.CenterStart)
+                    .offset { IntOffset(minOf(left.value, right.value).roundToInt(), 0) }
+                    .size(
+                        width = with(tabDensity) { kotlin.math.abs(right.value - left.value).toDp() },
+                        height = Sizes.tapMin,
+                    )
+                    .glass(RoundedCornerShape(Radius.pill), raised = false),
+            )
+        }
+    Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
+        TabItem(TabId.Today, selected, onSelect) { bounds[TabId.Today] = it }
+        TabItem(TabId.Habits, selected, onSelect) { bounds[TabId.Habits] = it }
         Box(Modifier.width(72.dp), contentAlignment = Alignment.Center) {
             Box(
                 Modifier
@@ -124,13 +181,14 @@ fun CTabBar(
                 CIcon(CadenceIcons.Plus, Modifier.graphicsLayer { rotationZ = rotation }, tint = colors.onAccent)
             }
         }
-        TabItem(TabId.Tasks, selected, onSelect)
-        TabItem(TabId.Notes, selected, onSelect)
+        TabItem(TabId.Tasks, selected, onSelect) { bounds[TabId.Tasks] = it }
+        TabItem(TabId.Notes, selected, onSelect) { bounds[TabId.Notes] = it }
+    }
     }
 }
 
 @Composable
-private fun RowScope.TabItem(tab: TabId, selected: TabId?, onSelect: (TabId) -> Unit) {
+private fun RowScope.TabItem(tab: TabId, selected: TabId?, onSelect: (TabId) -> Unit, onBounds: (androidx.compose.ui.geometry.Rect) -> Unit) {
     val colors = Cadence.colors
     val motion = Cadence.motion
     val haptics = LocalHaptics.current
@@ -141,6 +199,7 @@ private fun RowScope.TabItem(tab: TabId, selected: TabId?, onSelect: (TabId) -> 
         Modifier
             .weight(1f)
             .height(Sizes.tapMin)
+            .onGloballyPositioned { onBounds(it.boundsInParent()) }
             .walkTarget(
                 when (tab) {
                     TabId.Today -> WalkTarget.TabToday
@@ -191,7 +250,7 @@ fun CToast(message: String, token: Long, durationMs: Int, onUndo: (() -> Unit)?,
                 alpha = (appear.value * 2.2f).coerceAtMost(1f)
             }
             .heightIn(min = 52.dp)
-            .glass(shape, raised = true, blurred = true, materialize = { appear.value })
+            .glass(shape, raised = true, blurred = true, materialize = { appear.value }, adapt = rememberGlassAdapt(canFlip = false, themeIsDark = colors.isDark))
             .drawBehind {
                 val inset = 22.dp.toPx()
                 drawRect(

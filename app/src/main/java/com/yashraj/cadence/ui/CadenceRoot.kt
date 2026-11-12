@@ -19,8 +19,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -146,6 +148,11 @@ private fun CadenceContent(vm: AppViewModel) {
     var walkStep by remember { mutableStateOf<Int?>(null) }
     val scope = androidx.compose.runtime.rememberCoroutineScope()
     val glassTouch = remember { GlassTouch(scope) }
+    // Coming back to the app is the unlock: the light travels once around the glass. Reduce Motion skips it.
+    LifecycleResumeEffect(glassLight, motion.off) {
+        val job = scope.launch { if (!motion.off) glassLight.sweep() }
+        onPauseOrDispose { job.cancel() }
+    }
 
     // First run, and "Show the walkthrough" in Settings (which marks it unseen again): start from Today.
     val walkthroughSeen = settings?.walkthroughSeen ?: true
@@ -267,6 +274,22 @@ private fun CadenceContent(vm: AppViewModel) {
                     }
                 }
             }
+
+            // Scroll edge effect at the top: content dissolves just under the status bar, so the clock and titles stay clear.
+            val topInset = androidx.compose.foundation.layout.WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+            Box(
+                Modifier
+                    .align(Alignment.TopCenter)
+                    .fillMaxWidth()
+                    .height(topInset + 10.dp)
+                    .background(
+                        androidx.compose.ui.graphics.Brush.verticalGradient(
+                            0f to colors.backdrop.copy(alpha = 0.9f),
+                            0.7f to colors.backdrop.copy(alpha = 0.45f),
+                            1f to Color.Transparent,
+                        ),
+                    ),
+            )
 
             // Scroll edge effect: content dissolves into the ground beneath the floating tab bar, which lifts the glass above
             // it and keeps the bar legible. Dark or light, it is the ground colour, so over dark content it simply dims.

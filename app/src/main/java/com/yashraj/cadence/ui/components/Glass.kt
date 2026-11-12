@@ -18,7 +18,9 @@ import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
@@ -26,6 +28,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
@@ -46,6 +49,7 @@ import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.layer.GraphicsLayer
@@ -57,6 +61,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.yashraj.cadence.ui.theme.Blur
 import com.yashraj.cadence.ui.theme.Cadence
@@ -64,6 +69,8 @@ import com.yashraj.cadence.ui.theme.Radius
 import com.yashraj.cadence.ui.theme.ShadowLayer
 import kotlin.math.abs
 import kotlin.math.roundToInt
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.sample
 
 /**
  * The screen content behind floating glass (tab bar, toast, sheet). It is recorded into [layer] and each
@@ -358,6 +365,7 @@ private fun DrawScope.insetShadow(canvas: Canvas, layer: ShadowLayer, rr: RoundR
  * [materialize] runs 0 to 1 for glass that appears or disappears: instead of fading, the lens and the light ramp, which
  * is how Apple's glass comes and goes.
  */
+@OptIn(FlowPreview::class)
 @Composable
 fun Modifier.glass(
     shape: Shape = RoundedCornerShape(Radius.card),
@@ -367,6 +375,8 @@ fun Modifier.glass(
     materialize: () -> Float = { 1f },
     /** A colour poured into the glass, as Apple tints a primary action: it stays glass, it is not a solid fill. */
     tint: Color = Color.Unspecified,
+    /** Awareness of the content behind a floating tile: set by tiles that float over scrolling content. */
+    adapt: GlassAdapt? = null,
 ): Modifier {
     val colors = Cadence.colors
     val motion = Cadence.motion
@@ -398,6 +408,30 @@ fun Modifier.glass(
     val gridInk = colors.gridLine.let { it.copy(alpha = (it.alpha * 5f).coerceIn(0.12f, 0.5f)) }
     val reduceMotion = motion.off
     val lightScale = 0.7f + 0.3f * motion.m.coerceAtMost(1f)
+    // Like Apple's glass when its window loses focus, it recedes: less light, less lensing.
+    val focus by animateFloatAsState(if (window.isWindowFocused) 1f else 0f, tween(320), label = "glassFocus")
+    val probeLayer = rememberGraphicsLayer()
+    if (adapt != null && backdrop != null && blurred) {
+        // A few times a second while the backdrop is changing, read a 1/12 scale copy of what is behind this tile.
+        LaunchedEffect(backdrop, adapt) {
+            snapshotFlow { backdrop.version }.sample(280).collect {
+                val self = coordinates
+                val source = backdrop.coordinates
+                if (self != null && source != null && self.isAttached && source.isAttached && self.size.width > 0 && self.size.height > 0) {
+                    val relative = self.positionInRoot() - source.positionInRoot()
+                    val w = (self.size.width / 12).coerceAtLeast(4)
+                    val h = (self.size.height / 12).coerceAtLeast(4)
+                    probeLayer.record(density, LayoutDirection.Ltr, IntSize(w, h)) {
+                        scale(1f / 12f, pivot = Offset.Zero) { translate(-relative.x, -relative.y) { drawLayer(backdrop.layer) } }
+                    }
+                    val bitmap = probeLayer.toImageBitmap()
+                    val pixels = IntArray(bitmap.width * bitmap.height)
+                    bitmap.readPixels(pixels, 0, 0, bitmap.width, bitmap.height)
+                    adapt.update(pixels)
+                }
+            }
+        }
+    }
 
     return this
         .onGloballyPositioned {
@@ -452,12 +486,19 @@ fun Modifier.glass(
                 }
             }
 
+            // The shadow deepens over text and eases over a plain ground, as Apple's does.
+            val shadowK = if (adapt != null && adapt.known) GlassAdaptMath.shadowScale(adapt.busyness) else 1f
             drawIntoCanvas { canvas ->
                 bevel.filter { !it.inset }.forEach {
-                    val shadow = if (spill == null) it else ShadowLayer(false, it.x, it.y, it.blur, it.spread, lerp(it.color, spill, 0.16f).copy(alpha = it.color.alpha))
+                    val mixed = if (spill == null) it.color else lerp(it.color, spill, 0.16f)
+                    val shadow = ShadowLayer(false, it.x, it.y, it.blur, it.spread, mixed.copy(alpha = (it.color.alpha * shadowK).coerceAtMost(1f)))
                     dropShadow(canvas, shadow, rr, shapePath)
                 }
             }
+            val fillNow = if (adapt != null && adapt.known) fill.copy(alpha = (fill.alpha * GlassAdaptMath.fillScale(adapt.busyness)).coerceAtMost(0.96f)) else fill
+            // Tint tones follow the brightness underneath, like coloured glass: a touch darker over light, lighter over dark.
+            val ambient = if (adapt != null && adapt.known) adapt.luminance else GlassAdaptMath.luminance(lerp(colors.backdrop, spill ?: colors.backdrop, 0.4f).toArgb())
+            val tintNow = if (tint == Color.Unspecified) tint else lerp(tint, if (ambient > 0.5f) Color.Black else Color.White, 0.2f * abs(ambient - 0.5f)).copy(alpha = tint.alpha)
 
             clipPath(shapePath) {
                 if (backdrop != null) {
@@ -478,7 +519,7 @@ fun Modifier.glass(
                             thickness = (if (blurred) 46f else 36f).dp.toPx() * boost,
                             bezel = bezel,
                             // Quantised so a materialising tile makes a handful of lenses, not one per frame.
-                            amount = (appear * 24f).roundToInt() / 24f,
+                            amount = (appear * (0.55f + 0.45f * focus) * 24f).roundToInt() / 24f,
                             saturation = if (raised) 1.5f else 1.4f,
                             origin = Offset(relative.x.roundToInt().toFloat(), relative.y.roundToInt().toFloat()),
                             gridStep = 32.dp.toPx(),
@@ -490,8 +531,8 @@ fun Modifier.glass(
                         drawLayer(tileLayer)
                     }
                 }
-                drawRect(fill)
-                if (tint != Color.Unspecified) drawRect(tint)
+                drawRect(fillNow)
+                if (tintNow != Color.Unspecified) drawRect(tintNow)
                 if (!solid) {
                     val angle = Math.toRadians(145.0)
                     val dir = Offset(Math.sin(angle).toFloat(), -Math.cos(angle).toFloat())
@@ -516,9 +557,9 @@ fun Modifier.glass(
                         h = size.height,
                         corner = corner,
                         // As glass materialises the light travels around its silhouette, settling where the world light is.
-                        light = GlassLightMath.rotate(lightSource.direction, (1f - appear) * 2.6f),
+                        light = GlassLightMath.rotate(lightSource.direction, (1f - appear) * 2.6f + lightSource.sweepAngle),
                         rim = 1.5.dp.toPx() * boost,
-                        intensity = (if (dark) 0.62f else 0.95f) * lightScale * appear,
+                        intensity = (if (dark) 0.62f else 0.95f) * lightScale * appear * (0.35f + 0.65f * focus),
                         shadeAmount = (if (dark) 0.34f else 0.20f) * appear,
                         tint = tint,
                         // On a pale tile white light is invisible, so a touch there lights it in the colour of the light behind it.
