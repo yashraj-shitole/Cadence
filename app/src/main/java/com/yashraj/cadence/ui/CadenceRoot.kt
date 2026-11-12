@@ -123,7 +123,7 @@ private fun CadenceContent(vm: AppViewModel) {
     val nav = remember { NavState() }
     // The background light: random for each launch, and it eases to a new arrangement on every page change.
     val aurora = remember { AuroraState() }
-    val auroraSpec = motion.fade<Float>(1800, Ease.easeInOut)
+    val auroraSpec = motion.fade<Float>(900, Ease.easeInOut)
     val pagesSeen = remember { intArrayOf(0) }
     androidx.compose.runtime.LaunchedEffect(nav.current) {
         if (pagesSeen[0]++ > 0) aurora.advance(auroraSpec)
