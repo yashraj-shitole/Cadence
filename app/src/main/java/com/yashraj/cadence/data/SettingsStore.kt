@@ -42,6 +42,8 @@ data class Settings(
     val backupFolder: String? = null,
     /** When the last backup was written, in epoch milliseconds; 0 if never. */
     val lastBackupAt: Long = 0,
+    /** When the background photo was chosen (epoch millis), or 0 for the flowing gradient. Stays on the device. */
+    val backgroundImage: Long = 0,
 )
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "cadence_settings")
@@ -63,6 +65,7 @@ class SettingsStore(private val context: Context) {
         val walkthroughSeen = booleanPreferencesKey("walkthrough_seen")
         val backupFolder = stringPreferencesKey("backup_folder")
         val lastBackupAt = longPreferencesKey("last_backup_at")
+        val backgroundImage = longPreferencesKey("background_image")
     }
 
     val settings: Flow<Settings> = context.dataStore.data.map { p ->
@@ -83,6 +86,7 @@ class SettingsStore(private val context: Context) {
             walkthroughSeen = p[Keys.walkthroughSeen] ?: d.walkthroughSeen,
             backupFolder = p[Keys.backupFolder]?.takeIf { it.isNotEmpty() },
             lastBackupAt = p[Keys.lastBackupAt] ?: d.lastBackupAt,
+            backgroundImage = p[Keys.backgroundImage] ?: d.backgroundImage,
         )
     }
 
@@ -102,6 +106,7 @@ class SettingsStore(private val context: Context) {
 
     suspend fun setBackupFolder(uri: String?) = edit { it[Keys.backupFolder] = uri.orEmpty() }
     suspend fun setLastBackupAt(millis: Long) = edit { it[Keys.lastBackupAt] = millis }
+    suspend fun setBackgroundImage(stamp: Long) = edit { it[Keys.backgroundImage] = stamp }
 
     /** Applies the settings from a restored backup in one write. Device-only values (backup folder, last backup) are kept. */
     suspend fun restore(s: Settings) = edit {

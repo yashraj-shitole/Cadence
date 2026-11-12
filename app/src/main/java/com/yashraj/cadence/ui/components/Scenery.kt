@@ -12,6 +12,9 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
+import kotlin.math.roundToInt
 import com.yashraj.cadence.ui.theme.Cadence
 
 /**
@@ -25,8 +28,26 @@ import com.yashraj.cadence.ui.theme.Cadence
 fun Scenery(modifier: Modifier = Modifier) {
     val colors = Cadence.colors
     val aurora = LocalAurora.current
-    Box(modifier.fillMaxSize().drawBehind { drawRect(colors.backdrop) }) {
-        if (colors.showGlows && aurora != null) {
+    // High contrast never puts a photo under the text.
+    val photo = if (colors.highContrast) null else LocalBackground.current
+    val scrim = colors.backdrop.copy(alpha = BackgroundMath.scrimAlpha(photo?.luminance ?: 0.5f, colors.isDark))
+    Box(
+        modifier.fillMaxSize().drawBehind {
+            drawRect(colors.backdrop)
+            if (photo != null) {
+                val crop = BackgroundMath.centreCrop(photo.image.width, photo.image.height, size.width, size.height)
+                drawImage(
+                    photo.image,
+                    srcOffset = IntOffset(crop.x, crop.y),
+                    srcSize = IntSize(crop.width, crop.height),
+                    dstSize = IntSize(size.width.roundToInt(), size.height.roundToInt()),
+                )
+                // The ground colour over the photo keeps text legible whatever picture is chosen.
+                drawRect(scrim)
+            }
+        },
+    ) {
+        if (photo == null && colors.showGlows && aurora != null) {
             val glow1 = colors.glow1
             val glow2 = colors.glow2
             val glow3 = colors.glow3
@@ -55,7 +76,7 @@ fun Scenery(modifier: Modifier = Modifier) {
             }
         }
         val grid = colors.gridLine
-        Canvas(Modifier.fillMaxSize()) {
+        if (photo == null) Canvas(Modifier.fillMaxSize()) {
             val step = 32.dp.toPx()
             var x = -1f
             while (x < size.width) {

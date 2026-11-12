@@ -29,6 +29,8 @@ import com.yashraj.cadence.domain.planToday
 import com.yashraj.cadence.domain.taskKey
 import com.yashraj.cadence.feel.HapticSettings
 import com.yashraj.cadence.reminder.ReminderScheduler
+import com.yashraj.cadence.ui.components.BackgroundStore
+import com.yashraj.cadence.ui.components.LoadedBackground
 import com.yashraj.cadence.update.CheckResult
 import com.yashraj.cadence.update.ReleaseInfo
 import com.yashraj.cadence.update.UpdateChecker
@@ -49,6 +51,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -123,6 +126,27 @@ class AppViewModel(private val container: AppContainer) : ViewModel() {
     /** The release to offer in the update popup, or null when there is nothing to show. */
     val updatePrompt: StateFlow<ReleaseInfo?> = _updatePrompt.asStateFlow()
     val appVersion: String = BuildConfig.VERSION_NAME
+
+    /** The chosen background photo, loaded whenever it changes; null shows the flowing gradient. */
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    val background: StateFlow<LoadedBackground?> = settingsStore.settings
+        .map { it.backgroundImage }
+        .distinctUntilChanged()
+        .mapLatest { stamp -> if (stamp == 0L) null else BackgroundStore.load(container.appContext) }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    fun chooseBackground(uri: Uri) {
+        viewModelScope.launch {
+            if (BackgroundStore.save(container.appContext, uri)) settingsStore.setBackgroundImage(Dates.nowMillis()) else showToast("Couldn't use that image")
+        }
+    }
+
+    fun removeBackground() {
+        viewModelScope.launch {
+            BackgroundStore.clear(container.appContext)
+            settingsStore.setBackgroundImage(0)
+        }
+    }
 
     private val backupMutex = Mutex()
     private var backupDirty = false

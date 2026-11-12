@@ -53,6 +53,7 @@ import com.yashraj.cadence.ui.components.CTabBar
 import com.yashraj.cadence.ui.components.CToast
 import com.yashraj.cadence.ui.components.Haptics
 import com.yashraj.cadence.ui.components.LocalAurora
+import com.yashraj.cadence.ui.components.LocalBackground
 import com.yashraj.cadence.ui.components.GlassTouch
 import com.yashraj.cadence.ui.components.LocalGlassLight
 import com.yashraj.cadence.ui.components.LocalGlassTouch
@@ -148,6 +149,7 @@ private fun CadenceContent(vm: AppViewModel) {
     var walkStep by remember { mutableStateOf<Int?>(null) }
     val scope = androidx.compose.runtime.rememberCoroutineScope()
     val glassTouch = remember { GlassTouch(scope) }
+    val background by vm.background.collectAsState()
     // Coming back to the app is the unlock: the light travels once around the glass. Reduce Motion skips it.
     LifecycleResumeEffect(glassLight, motion.off) {
         val job = scope.launch { if (!motion.off) glassLight.sweep() }
@@ -216,7 +218,7 @@ private fun CadenceContent(vm: AppViewModel) {
     val openSheet: (SheetTarget) -> Unit = { sheet = it }
     val tags = (tasks?.mapNotNull { it.tag } ?: emptyList()).distinct().sorted()
 
-    CompositionLocalProvider(LocalHaptics provides haptics, LocalBackdrop provides backdrop, LocalWalkTargets provides walkTargets, LocalAurora provides aurora, LocalGlassLight provides glassLight, LocalGlassTouch provides glassTouch) {
+    CompositionLocalProvider(LocalHaptics provides haptics, LocalBackdrop provides backdrop, LocalWalkTargets provides walkTargets, LocalAurora provides aurora, LocalGlassLight provides glassLight, LocalGlassTouch provides glassTouch, LocalBackground provides background) {
       Box(Modifier.fillMaxSize()) {
         Box(Modifier.fillMaxSize().background(colors.backdrop).windowCapture(windowCapture) { walkStep != null }) {
             Box(Modifier.fillMaxSize().backdropSource(backdrop)) {

@@ -25,6 +25,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -62,6 +63,7 @@ import com.yashraj.cadence.ui.components.CToggle
 import com.yashraj.cadence.ui.components.CheckState
 import com.yashraj.cadence.ui.components.GroupDivider
 import com.yashraj.cadence.ui.components.LocalHaptics
+import com.yashraj.cadence.ui.components.LocalOnGlass
 import com.yashraj.cadence.ui.components.PalettePicker
 import com.yashraj.cadence.ui.components.SceneryHost
 import com.yashraj.cadence.ui.components.SectionHeading
@@ -117,6 +119,10 @@ fun SettingsScreen(vm: AppViewModel, onBack: () -> Unit) {
     val backupProblem by vm.backupProblem.collectAsState()
     val folderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         if (uri != null) vm.chooseBackupFolder(uri)
+    }
+    // The system photo picker: no storage permission, and the app only ever sees the one photo chosen.
+    val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) vm.chooseBackground(uri)
     }
 
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
@@ -210,6 +216,24 @@ fun SettingsScreen(vm: AppViewModel, onBack: () -> Unit) {
                     GroupDivider()
                     SettingStack("Backdrop") {
                         CSegmented(BackdropStyle.entries.map { it.label }, s.backdrop.ordinal, { vm.setBackdrop(BackdropStyle.entries[it]) }, label = "Backdrop")
+                    }
+                    GroupDivider()
+                    val hasPhoto = s.backgroundImage != 0L
+                    SettingRow(
+                        title = "Background image",
+                        sub = if (hasPhoto) "A photo from your phone sits behind everything. It stays on this phone." else "Use a photo from your phone behind everything",
+                        value = if (hasPhoto) "On" else null,
+                        chevron = true,
+                        onClick = { photoPicker.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+                    )
+                    if (hasPhoto) {
+                        GroupDivider()
+                        SettingRow(
+                            title = "Remove image",
+                            sub = "Back to the flowing gradient",
+                            chevron = true,
+                            onClick = { vm.removeBackground() },
+                        )
                     }
                     GroupDivider()
                     SettingRow(
@@ -387,6 +411,7 @@ private fun EraseDialog(onCancel: () -> Unit, onErase: () -> Unit) {
         appear.animateTo(1f, motion.fade(Dur.base, Ease.easeOut))
     }
     Dialog(onDismissRequest = onCancel, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        CompositionLocalProvider(LocalOnGlass provides true) {
         Column(
             Modifier
                 // The dialog window wraps its content, so leave room for the drop shadow or it is clipped square.
@@ -400,6 +425,8 @@ private fun EraseDialog(onCancel: () -> Unit, onErase: () -> Unit) {
                     scaleX = scale
                     scaleY = scale
                 }
+                // A dialog is its own window, so nothing behind it is blurred: an opaque base keeps the text readable.
+                .background(colors.surfaceSolidRaised, RoundedCornerShape(Radius.sheet))
                 .glass(RoundedCornerShape(Radius.sheet), raised = true, materialize = { appear.value })
                 .padding(Space.s6),
             verticalArrangement = Arrangement.spacedBy(Space.s4),
@@ -415,6 +442,7 @@ private fun EraseDialog(onCancel: () -> Unit, onErase: () -> Unit) {
                 CButton("Keep my data", onCancel, kind = ButtonKind.Glass)
                 CButton("Erase everything", onErase, kind = ButtonKind.Danger)
             }
+        }
         }
     }
 }
