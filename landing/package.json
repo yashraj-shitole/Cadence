@@ -1,0 +1,16 @@
+{
+  "name": "cadence-landing",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Landing page for the Cadence app. Static site; the 3D scene is bundled from src/scene.js.",
+  "scripts": {
+    "build": "esbuild src/scene.js --bundle --minify --format=iife --global-name=CadenceScene --target=es2019 --outfile=assets/scene.js",
+    "dev": "esbuild src/scene.js --bundle --format=iife --global-name=CadenceScene --target=es2019 --outfile=assets/scene.js --watch",
+    "serve": "node serve.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "playwright-core": "^1.65.0",
+    "three": "^0.170.0"
+  }
+}
