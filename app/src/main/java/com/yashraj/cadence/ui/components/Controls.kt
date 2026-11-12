@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -237,25 +238,31 @@ private fun Modifier.trackPress(onPressed: (Boolean) -> Unit): Modifier = pointe
 }
 
 /**
- * The part of a control that moves (slider thumb, toggle knob, selector thumb) rests quiet and solid, then lifts into
- * liquid glass while it is touched: it swells a little, like a gel, and its solid fill thins out so the lens and the
- * light show and the value underneath can be seen through it.
+ * The part of a control that moves (toggle knob, slider thumb, selector thumb) is a clear liquid-glass lens that rides
+ * over its own track, which it bends at the rim exactly as the glass bends everything behind it. At rest it carries a
+ * light translucent veil, so it stays quiet; while touched the veil clears and it swells a little, like a gel, so the
+ * track beneath can be seen through the lens. The control passes its track as the backdrop with [LocalScenery].
+ * Reduce transparency and high contrast fall back to a solid thumb.
  */
 @Composable
-private fun Modifier.liftIntoGlass(shape: Shape, lift: Float): Modifier =
-    this
+private fun Modifier.glassThumb(shape: Shape, lift: Float, solidFallback: androidx.compose.ui.graphics.Color): Modifier {
+    val colors = Cadence.colors
+    if (colors.solidSurfaces) return this.thumbShadow(colors.shadows.thumb, shape).background(solidFallback, shape)
+    val veil = androidx.compose.ui.graphics.Color.White.copy(alpha = (0.5f - 0.42f * lift) * (if (colors.isDark) 0.5f else 1f))
+    return this
         .graphicsLayer {
-            val grow = 1f + 0.16f * lift
+            val grow = 1f + 0.08f * lift
             scaleX = grow
             scaleY = grow
         }
-        .then(if (lift > 0.01f) Modifier.glass(shape, raised = true, materialize = { lift }) else Modifier)
+        .glass(shape, raised = true, interactive = true)
+        .background(veil, shape)
+}
 
 @Composable
-private fun rememberLift(pressed: Boolean, rest: Float = 0.6f): Float {
+private fun rememberLift(pressed: Boolean): Float {
     val motion = Cadence.motion
-    // The thumb is visibly glass at rest (a lens over its track) and goes fully clear and energised while touched.
-    val lift by animateFloatAsState(if (pressed) 1f else rest, motion.fade(Dur.base, Ease.easeOut), label = "lift")
+    val lift by animateFloatAsState(if (pressed) 1f else 0f, motion.fade(Dur.base, Ease.easeOut), label = "lift")
     return lift
 }
 
@@ -275,6 +282,7 @@ fun CSegmented(
     val position by animateFloatAsState(selected.toFloat(), motion.move(Dur.base, Ease.easeInOut), label = "segThumb")
     var segPressed by remember { mutableStateOf(false) }
     val segLift = rememberLift(segPressed)
+    val segTrack = rememberBackdropState()
     Box(
         modifier
             .fillMaxWidth()
@@ -284,16 +292,18 @@ fun CSegmented(
             .padding(4.dp)
             .semantics { if (label != null) contentDescription = label },
     ) {
-        Box(
-            Modifier
-                .fillMaxWidth(1f / options.size)
-                .height(40.dp)
-                .graphicsLayer { translationX = position * size.width }
-                .thumbShadow(colors.shadows.thumb, thumbShape)
-                .liftIntoGlass(thumbShape, segLift)
-                .background(colors.surfaceSolidRaised.copy(alpha = 1f - 0.9f * segLift), thumbShape)
-                .then(if (colors.highContrast) Modifier.border(2.dp, colors.accent, thumbShape) else Modifier),
-        )
+        // The track is what the thumb's lens bends.
+        Box(Modifier.matchParentSize().backdropSource(segTrack).background(colors.track, trackShape))
+        androidx.compose.runtime.CompositionLocalProvider(LocalScenery provides segTrack) {
+            Box(
+                Modifier
+                    .fillMaxWidth(1f / options.size)
+                    .height(40.dp)
+                    .graphicsLayer { translationX = position * size.width }
+                    .glassThumb(thumbShape, segLift, colors.surfaceSolidRaised)
+                    .then(if (colors.highContrast) Modifier.border(2.dp, colors.accent, thumbShape) else Modifier),
+            )
+        }
         Row(Modifier.fillMaxWidth()) {
             options.forEachIndexed { index, option ->
                 val textColor by animateColorAsState(if (index == selected) colors.ink else colors.inkMuted, motion.fade(Dur.quick), label = "segText")
@@ -338,9 +348,10 @@ fun CToggle(
     val trackFill by animateColorAsState(if (checked) colors.accent else colors.track, motion.fade(Dur.quick), label = "toggleTrack")
     val trackEdge by animateColorAsState(if (checked) colors.accent else colors.controlEdge, motion.fade(Dur.quick), label = "toggleEdge")
     val knobColor by animateColorAsState(if (checked) colors.onAccent else colors.controlEdge, motion.fade(Dur.quick), label = "toggleKnob")
-    val knobX by animateFloatAsState(if (checked) 20f else 0f, motion.move(Dur.base, motion.settle), label = "toggleX")
+    val knobP by animateFloatAsState(if (checked) 1f else 0f, motion.move(Dur.base, motion.settle), label = "toggleX")
     var togglePressed by remember { mutableStateOf(false) }
     val knobLift = rememberLift(togglePressed)
+    val toggleTrack = rememberBackdropState()
     Box(
         modifier
             .trackPress { togglePressed = it }
@@ -362,20 +373,24 @@ fun CToggle(
             },
         contentAlignment = Alignment.Center,
     ) {
-        Box(
-            Modifier
-                .size(width = 52.dp, height = 32.dp)
-                .background(trackFill, trackShape)
-                .border(1.5.dp, trackEdge, trackShape),
-        ) {
+        Box(Modifier.size(width = 52.dp, height = 32.dp)) {
+            // The track is what the knob's lens bends: a capsule of glass that widens while touched.
             Box(
                 Modifier
-                    .offset(x = (4.5f + knobX).dp, y = 4.5.dp)
-                    .size(23.dp)
-                    .then(if (checked) Modifier.thumbShadow(colors.shadows.thumb, CircleShape) else Modifier)
-                    .liftIntoGlass(CircleShape, knobLift)
-                    .background(knobColor.copy(alpha = knobColor.alpha * (1f - 0.88f * knobLift)), CircleShape),
+                    .fillMaxSize()
+                    .backdropSource(toggleTrack)
+                    .background(trackFill, trackShape)
+                    .border(1.5.dp, trackEdge, trackShape),
             )
+            val knobWidth = 30f + 6f * knobLift
+            androidx.compose.runtime.CompositionLocalProvider(LocalScenery provides toggleTrack) {
+                Box(
+                    Modifier
+                        .offset(x = (4f + knobP * (44f - knobWidth)).dp, y = 4.dp)
+                        .size(width = knobWidth.dp, height = 24.dp)
+                        .glassThumb(CircleShape, knobLift, knobColor),
+                )
+            }
         }
     }
 }
@@ -402,6 +417,7 @@ fun CLevelSlider(
     val trackShape = RoundedCornerShape(Radius.pill)
     var thumbPressed by remember { mutableStateOf(false) }
     val thumbLift = rememberLift(thumbPressed)
+    val sliderTrack = rememberBackdropState()
     Column(modifier.alpha(if (enabled) 1f else 0.5f), verticalArrangement = Arrangement.spacedBy(Space.s2)) {
         BoxWithConstraints(
             Modifier
@@ -440,6 +456,8 @@ fun CLevelSlider(
             contentAlignment = Alignment.CenterStart,
         ) {
             val usable = maxWidth - 28.dp
+            // The track, its fill and its detents are what the thumb's lens bends.
+            Box(Modifier.fillMaxSize().backdropSource(sliderTrack), contentAlignment = Alignment.CenterStart) {
             Box(
                 Modifier
                     .fillMaxWidth()
@@ -460,15 +478,16 @@ fun CLevelSlider(
             ) {
                 repeat(4) { Box(Modifier.size(4.dp).background(colors.controlEdge, CircleShape)) }
             }
-            Box(
-                Modifier
-                    .offset(x = usable * (thumbPosition / 3f))
-                    .size(28.dp)
-                    .thumbShadow(colors.shadows.thumb, CircleShape)
-                    .liftIntoGlass(CircleShape, thumbLift)
-                    .background(colors.surfaceSolidRaised.copy(alpha = 1f - 0.9f * thumbLift), CircleShape)
-                    .border(2.dp, colors.accent, CircleShape),
-            )
+            }
+            androidx.compose.runtime.CompositionLocalProvider(LocalScenery provides sliderTrack) {
+                Box(
+                    Modifier
+                        .offset(x = usable * (thumbPosition / 3f))
+                        .size(28.dp)
+                        .glassThumb(CircleShape, thumbLift, colors.surfaceSolidRaised)
+                        .then(if (colors.solidSurfaces) Modifier.border(2.dp, colors.accent, CircleShape) else Modifier),
+                )
+            }
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             labels.forEachIndexed { i, text ->
