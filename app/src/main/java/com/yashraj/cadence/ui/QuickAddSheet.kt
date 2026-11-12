@@ -156,7 +156,10 @@ fun QuickAddOverlay(
                     val travel = if (motion.off) 0f else (1f - progress.value) * sheetHeight
                     IntOffset(0, (travel + drag.value).roundToInt())
                 }
-                .graphicsLayer { alpha = if (motion.off) progress.value else 1f }
+                .graphicsLayer {
+                    compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.ModulateAlpha
+                    alpha = if (motion.off) progress.value else 1f
+                }
                 .draggable(
                     orientation = Orientation.Vertical,
                     state = rememberDraggableState { delta -> dragScope.launch { drag.snapTo((drag.value + delta).coerceAtLeast(0f)) } },

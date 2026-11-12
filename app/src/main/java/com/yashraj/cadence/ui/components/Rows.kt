@@ -20,6 +20,10 @@ import androidx.compose.ui.layout.layout
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.EnterExitState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
@@ -234,14 +238,28 @@ fun NextUpCard(
         transitionSpec = {
             val rise = with(density) { motion.travel(12f).dp.roundToPx() }
             val lift = with(density) { motion.travel(8f).dp.roundToPx() }
-            (fadeIn(motion.fade(Dur.slow, Ease.easeOut)) + slideInVertically(motion.move(Dur.slow, Ease.easeOut)) { rise })
-                .togetherWith(fadeOut(motion.fade(Dur.quick, Ease.easeIn)) + slideOutVertically(motion.move(Dur.quick, Ease.easeIn)) { -lift })
+            // The fade is done inside the content (see below) so the buttons' shadows are never clipped to a rectangle.
+            slideInVertically(motion.move(Dur.slow, Ease.easeOut)) { rise }
+                .togetherWith(slideOutVertically(motion.move(Dur.quick, Ease.easeIn)) { -lift })
                 .using(SizeTransform(clip = false))
         },
         label = "nextUp",
     ) {
+        // Entering fades in, leaving fades out: this card is the one entering or leaving.
+        val fade by transition.animateFloat(
+            transitionSpec = { motion.fade<Float>(if (targetState == EnterExitState.Visible) Dur.slow else Dur.quick, Ease.easeOut) },
+            label = "nextUpFade",
+        ) { if (it == EnterExitState.Visible) 1f else 0f }
         androidx.compose.runtime.CompositionLocalProvider(LocalOnGlass provides true) {
-        Column(Modifier.fillMaxWidth().padding(Space.s5)) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .graphicsLayer {
+                    alpha = fade
+                    compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.ModulateAlpha
+                }
+                .padding(Space.s5),
+        ) {
             CText("NEXT UP", CadenceType.label, color = colors.inkMuted)
             if (beat != null) {
                 CText(beat.title, CadenceType.title, Modifier.padding(top = Space.s1), maxLines = 2)

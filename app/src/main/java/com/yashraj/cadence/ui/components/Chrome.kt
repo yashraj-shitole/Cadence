@@ -84,6 +84,25 @@ enum class TabId(val label: String, val icon: IconDef) {
     Notes("Notes", CadenceIcons.Notes),
 }
 
+/**
+ * Fades [content] in and out. Compose's own AnimatedVisibility fades through an offscreen buffer the size of its content,
+ * which cuts every shadow that reaches past the content's edge to a rectangle until the fade ends; this applies the alpha
+ * to each thing drawn instead, so a button's shadow keeps its shape from the first frame to the last.
+ */
+@Composable
+fun SoftFade(visible: Boolean, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    val motion = Cadence.motion
+    val alpha by animateFloatAsState(if (visible) 1f else 0f, motion.fade(if (visible) Dur.base else Dur.quick), label = "softFade")
+    if (visible || alpha > 0.001f) {
+        Box(
+            modifier.graphicsLayer {
+                this.alpha = alpha
+                compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.ModulateAlpha
+            },
+        ) { content() }
+    }
+}
+
 /** The floating tab bar: Today, Habits, [Quick add], Tasks, Notes. Always the lowest layer of chrome. */
 @Composable
 fun CTabBar(

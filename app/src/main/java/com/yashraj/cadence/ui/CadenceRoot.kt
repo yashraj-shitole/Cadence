@@ -54,6 +54,7 @@ import com.yashraj.cadence.ui.components.AuroraState
 import com.yashraj.cadence.ui.components.BounceOverscrollFactory
 import com.yashraj.cadence.ui.components.CTabBar
 import com.yashraj.cadence.ui.components.CToast
+import com.yashraj.cadence.ui.components.SoftFade
 import com.yashraj.cadence.ui.components.Haptics
 import com.yashraj.cadence.ui.components.LocalAurora
 import com.yashraj.cadence.ui.components.LocalBackground
@@ -334,12 +335,7 @@ private fun CadenceContent(vm: AppViewModel) {
             }
 
             // Floating layers: the tab bar, the Undo toast, then the Quick add sheet above them.
-            AnimatedVisibility(
-                visible = nav.tab != null,
-                modifier = Modifier.align(Alignment.BottomCenter),
-                enter = fadeIn(motion.fade(Dur.base)),
-                exit = fadeOut(motion.fade(Dur.quick)),
-            ) {
+            SoftFade(visible = nav.tab != null, modifier = Modifier.align(Alignment.BottomCenter)) {
                 CTabBar(
                     selected = nav.tab,
                     onSelect = { nav.selectTab(it) },
@@ -359,12 +355,7 @@ private fun CadenceContent(vm: AppViewModel) {
 
             var lastToast by remember { mutableStateOf<ToastState?>(null) }
             if (toast != null) lastToast = toast
-            AnimatedVisibility(
-                visible = toast != null,
-                modifier = Modifier.align(Alignment.BottomCenter),
-                enter = fadeIn(motion.fade(Dur.base)),
-                exit = fadeOut(motion.fade(Dur.quick)),
-            ) {
+            SoftFade(visible = toast != null, modifier = Modifier.align(Alignment.BottomCenter)) {
                 lastToast?.let { t ->
                     CToast(
                         message = t.message,

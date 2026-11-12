@@ -68,7 +68,7 @@ fun UpdateDialog(version: String, current: String, onLater: () -> Unit, onDownlo
         ) {
             CText("Cadence $version is out", CadenceType.title)
             CText(
-                "You have $current. Download opens the release page in your browser, where you can install the new version over this one. Your habits, tasks and notes stay as they are.",
+                "You have $current. Download fetches the new version straight away; open the file when it finishes to install it over this one. Your habits, tasks and notes stay as they are.",
                 CadenceType.body,
                 color = colors.inkMuted,
                 maxLines = 6,

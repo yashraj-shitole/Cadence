@@ -418,7 +418,12 @@ fun CLevelSlider(
     var thumbPressed by remember { mutableStateOf(false) }
     val thumbLift = rememberLift(thumbPressed)
     val sliderTrack = rememberBackdropState()
-    Column(modifier.alpha(if (enabled) 1f else 0.5f), verticalArrangement = Arrangement.spacedBy(Space.s2)) {
+    Column(
+        modifier.graphicsLayer {
+            compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.ModulateAlpha
+            alpha = if (enabled) 1f else 0.5f
+        },
+        verticalArrangement = Arrangement.spacedBy(Space.s2)) {
         BoxWithConstraints(
             Modifier
                 .fillMaxWidth()

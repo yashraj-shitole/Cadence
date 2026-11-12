@@ -24,6 +24,9 @@ object UpdateChecker {
     private const val LATEST_API = "https://api.github.com/repos/yashraj-shitole/Cadence/releases/latest"
     const val RELEASE_PAGE = "https://github.com/yashraj-shitole/Cadence/releases/latest"
 
+    /** Every release carries the installer under this fixed name, so a link to it always starts the download. */
+    private const val ApkAssetName = "Cadence.apk"
+
     suspend fun check(currentVersion: String): CheckResult = withContext(Dispatchers.IO) {
         try {
             val conn = (URL(LATEST_API).openConnection() as HttpURLConnection).apply {
@@ -38,7 +41,14 @@ object UpdateChecker {
                 val tag = json.optString("tag_name")
                 if (tag.isBlank()) return@withContext CheckResult.Failed
                 val page = json.optString("html_url").ifBlank { RELEASE_PAGE }
-                if (isNewer(tag, currentVersion)) CheckResult.Available(ReleaseInfo(tag.removePrefix("v"), page)) else CheckResult.UpToDate
+                // Prefer the installer itself, so Download starts the download instead of opening a web page.
+                val assets = json.optJSONArray("assets")
+                val apk = (0 until (assets?.length() ?: 0))
+                    .mapNotNull { assets?.optJSONObject(it) }
+                    .firstOrNull { it.optString("name") == ApkAssetName }
+                    ?.optString("browser_download_url")
+                    ?.takeIf { it.isNotBlank() }
+                if (isNewer(tag, currentVersion)) CheckResult.Available(ReleaseInfo(tag.removePrefix("v"), apk ?: page)) else CheckResult.UpToDate
             } finally {
                 conn.disconnect()
             }

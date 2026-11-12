@@ -78,6 +78,7 @@ fun ActionMenu(expanded: Boolean, onDismiss: () -> Unit, items: List<MenuItem>) 
                     val s = 1f - (1f - appear.value) * 0.4f * motion.m
                     scaleX = s
                     scaleY = s
+                    compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.ModulateAlpha
                     alpha = (appear.value * 2.2f).coerceAtMost(1f)
                 }
                 .pointerInput(Unit) { detectTapGestures { } }
