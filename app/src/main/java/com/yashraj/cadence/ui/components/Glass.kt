@@ -130,7 +130,7 @@ uniform float gridStep;
 uniform half4 gridColor;
 uniform float saturation;
 
-half4 saturate(half4 c) {
+half4 adjustSaturation(half4 c) {
     half l = dot(c.rgb, half3(0.2126, 0.7152, 0.0722));
     return half4(mix(half3(l), c.rgb, half(saturation)), c.a);
 }
@@ -145,7 +145,7 @@ half4 main(float2 coord) {
     float2 p = coord - halfSize;
     float depth = -sdRoundRect(p, halfSize, radius);
     if (depth >= bezel || amount <= 0.0) {
-        return saturate(content.eval(coord));
+        return adjustSaturation(content.eval(coord));
     }
     float x = clamp(depth / bezel, 0.0, 1.0);
     float u = 1.0 - x;
@@ -168,7 +168,7 @@ half4 main(float2 coord) {
     float2 g = abs(fract((s + 1.0) / gridStep - 0.5) - 0.5) * gridStep;
     float line = 1.0 - smoothstep(0.4, 1.4, min(g.x, g.y));
     c.rgb = mix(c.rgb, gridColor.rgb, half(line * gridColor.a * (1.0 - x)));
-    return saturate(c);
+    return adjustSaturation(c);
 }
 """
 
