@@ -21,6 +21,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.yashraj.cadence.feel.HapticKind
 import com.yashraj.cadence.ui.components.ButtonKind
 import com.yashraj.cadence.ui.components.CButtonBlock
+import com.yashraj.cadence.ui.components.Concentric
 import com.yashraj.cadence.ui.components.LocalHaptics
 import com.yashraj.cadence.ui.components.LocalOnGlass
 import com.yashraj.cadence.ui.components.glass
@@ -80,9 +81,9 @@ fun ImportChoiceDialog(onAdd: () -> Unit, onReplace: () -> Unit, onCancel: () ->
         body = "Add keeps what you have and adds anything new. Replace erases everything on this phone first, then restores the backup, including your settings.",
         onDismiss = onCancel,
     ) {
-        CButtonBlock("Add to my data", onAdd, kind = ButtonKind.Glass)
-        CButtonBlock("Replace everything", onReplace, kind = ButtonKind.Danger)
-        CButtonBlock("Cancel", onCancel, kind = ButtonKind.Quiet)
+        CButtonBlock("Add to my data", onAdd, kind = ButtonKind.Glass, cornerRadius = Concentric.dialogButton)
+        CButtonBlock("Replace everything", onReplace, kind = ButtonKind.Danger, cornerRadius = Concentric.dialogButton)
+        CButtonBlock("Cancel", onCancel, kind = ButtonKind.Quiet, cornerRadius = Concentric.dialogButton)
     }
 }
 
@@ -94,7 +95,7 @@ fun RestoreOfferDialog(onChoose: () -> Unit, onStartFresh: () -> Unit) {
         body = "If you used Cadence before, choose your backup file (cadence-backup.json) to bring back your habits, tasks, notes and settings.",
         onDismiss = onStartFresh,
     ) {
-        CButtonBlock("Choose backup file", onChoose)
-        CButtonBlock("Start fresh", onStartFresh, kind = ButtonKind.Glass)
+        CButtonBlock("Choose backup file", onChoose, cornerRadius = Concentric.dialogButton)
+        CButtonBlock("Start fresh", onStartFresh, kind = ButtonKind.Glass, cornerRadius = Concentric.dialogButton)
     }
 }

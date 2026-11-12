@@ -247,8 +247,8 @@ fun NextUpCard(
                 CText(beat.title, CadenceType.title, Modifier.padding(top = Space.s1), maxLines = 2)
                 if (beat.line.isNotBlank()) CText(beat.line, CadenceType.callout, color = colors.inkMuted, maxLines = 2)
                 Row(Modifier.fillMaxWidth().padding(top = Space.s4), horizontalArrangement = Arrangement.spacedBy(Space.s2), verticalAlignment = Alignment.CenterVertically) {
-                    CButton("Mark done", onDone, Modifier.weight(1f))
-                    CButton("Later", onLater, kind = ButtonKind.Glass)
+                    CButton("Mark done", onDone, Modifier.weight(1f), cornerRadius = Concentric.nextUpButton)
+                    CButton("Later", onLater, kind = ButtonKind.Glass, cornerRadius = Concentric.nextUpButton)
                 }
             } else {
                 CText("That's today", CadenceType.title, Modifier.padding(top = Space.s1))

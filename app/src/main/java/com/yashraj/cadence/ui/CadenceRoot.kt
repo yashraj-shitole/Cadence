@@ -16,6 +16,7 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.LocalOverscrollFactory
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -49,6 +50,7 @@ import com.yashraj.cadence.feel.HapticKind
 import com.yashraj.cadence.feel.SystemFeel
 import kotlinx.coroutines.launch
 import com.yashraj.cadence.ui.components.AuroraState
+import com.yashraj.cadence.ui.components.BounceOverscrollFactory
 import com.yashraj.cadence.ui.components.CTabBar
 import com.yashraj.cadence.ui.components.CToast
 import com.yashraj.cadence.ui.components.Haptics
@@ -57,6 +59,9 @@ import com.yashraj.cadence.ui.components.LocalBackground
 import com.yashraj.cadence.ui.components.GlassTouch
 import com.yashraj.cadence.ui.components.LocalGlassLight
 import com.yashraj.cadence.ui.components.LocalGlassTouch
+import com.yashraj.cadence.ui.components.LocalAnimatedScope
+import com.yashraj.cadence.ui.components.LocalSharedTransition
+import com.yashraj.cadence.ui.components.LocalInBackdropSource
 import com.yashraj.cadence.ui.components.rememberGlassLight
 import com.yashraj.cadence.ui.components.LocalBackdrop
 import com.yashraj.cadence.ui.components.LocalHaptics
@@ -120,6 +125,7 @@ fun CadenceRoot(vm: AppViewModel) {
     CadenceTheme(s, systemReduceMotion) { CadenceContent(vm) }
 }
 
+@OptIn(androidx.compose.animation.ExperimentalSharedTransitionApi::class)
 @Composable
 private fun CadenceContent(vm: AppViewModel) {
     val colors = Cadence.colors
@@ -150,6 +156,10 @@ private fun CadenceContent(vm: AppViewModel) {
     val scope = androidx.compose.runtime.rememberCoroutineScope()
     val glassTouch = remember { GlassTouch(scope) }
     val background by vm.background.collectAsState()
+    // Pulling past the end moves the list (iOS style) so every glass tile follows; Android's stretch smears the pixels and
+    // leaves the glass behind. Reduce Motion turns the elastic effect off, as the transcript asks.
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val bounceFactory = remember(motion.off, density) { if (motion.off) null else BounceOverscrollFactory(with(density) { 120.dp.toPx() }) }
     // Coming back to the app is the unlock: the light travels once around the glass. Reduce Motion skips it.
     LifecycleResumeEffect(glassLight, motion.off) {
         val job = scope.launch { if (!motion.off) glassLight.sweep() }
@@ -218,10 +228,12 @@ private fun CadenceContent(vm: AppViewModel) {
     val openSheet: (SheetTarget) -> Unit = { sheet = it }
     val tags = (tasks?.mapNotNull { it.tag } ?: emptyList()).distinct().sorted()
 
-    CompositionLocalProvider(LocalHaptics provides haptics, LocalBackdrop provides backdrop, LocalWalkTargets provides walkTargets, LocalAurora provides aurora, LocalGlassLight provides glassLight, LocalGlassTouch provides glassTouch, LocalBackground provides background) {
+    CompositionLocalProvider(LocalHaptics provides haptics, LocalBackdrop provides backdrop, LocalWalkTargets provides walkTargets, LocalAurora provides aurora, LocalGlassLight provides glassLight, LocalGlassTouch provides glassTouch, LocalBackground provides background, LocalOverscrollFactory provides bounceFactory) {
       Box(Modifier.fillMaxSize()) {
         Box(Modifier.fillMaxSize().background(colors.backdrop).windowCapture(windowCapture) { walkStep != null }) {
             Box(Modifier.fillMaxSize().backdropSource(backdrop)) {
+              androidx.compose.animation.SharedTransitionLayout {
+              CompositionLocalProvider(LocalInBackdropSource provides true, LocalSharedTransition provides this) {
                 AnimatedContent(
                     targetState = nav.current,
                     transitionSpec = {
@@ -244,6 +256,7 @@ private fun CadenceContent(vm: AppViewModel) {
                     },
                     label = "screens",
                 ) { route ->
+                    CompositionLocalProvider(LocalAnimatedScope provides this) {
                     when (route) {
                         is Route.Tab -> when (route.id) {
                             TabId.Today -> TodayScreen(
@@ -274,7 +287,10 @@ private fun CadenceContent(vm: AppViewModel) {
                         )
                         is Route.NoteEditor -> NoteEditorScreen(vm, route.id, onBack = nav::pop)
                     }
+                    }
                 }
+              }
+              }
             }
 
             // Scroll edge effect at the top: content dissolves just under the status bar, so the clock and titles stay clear.

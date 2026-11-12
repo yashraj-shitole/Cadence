@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.yashraj.cadence.ui.components.SceneryHost
+import com.yashraj.cadence.ui.components.topBarMorph
 import com.yashraj.cadence.ui.theme.CText
 import com.yashraj.cadence.ui.theme.Cadence
 import com.yashraj.cadence.ui.theme.CadenceType
@@ -81,7 +82,7 @@ fun ScreenHeader(
             if (eyebrow != null) CText(eyebrow, EyebrowStyle, color = colors.ink, maxLines = 1)
             CText(title, CadenceType.display, Modifier.semantics { heading() }, color = colors.ink, maxLines = 2)
         }
-        if (trailing != null) Row(horizontalArrangement = Arrangement.spacedBy(Space.s2)) { trailing() }
+        if (trailing != null) Row(Modifier.topBarMorph(), horizontalArrangement = Arrangement.spacedBy(Space.s2)) { trailing() }
     }
 }
 

@@ -73,6 +73,7 @@ import com.yashraj.cadence.ui.components.CIconButton
 import com.yashraj.cadence.ui.components.CTag
 import com.yashraj.cadence.ui.components.MenuItem
 import com.yashraj.cadence.ui.components.SceneryHost
+import com.yashraj.cadence.ui.components.topBarMorph
 import com.yashraj.cadence.ui.components.glass
 import com.yashraj.cadence.ui.editor.BlockEditor
 import com.yashraj.cadence.ui.editor.EditorState
@@ -178,9 +179,9 @@ fun NoteEditorScreen(vm: AppViewModel, noteId: Long?, onBack: () -> Unit) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                CIconButton(CadenceIcons.Back, "Back to notes", onBack)
+                CIconButton(CadenceIcons.Back, "Back to notes", onBack, Modifier.topBarMorph("top-leading"))
                 CText(saved, EyebrowStyle, Modifier.semantics { liveRegion = LiveRegionMode.Polite }, color = colors.ink)
-                Row(horizontalArrangement = Arrangement.spacedBy(Space.s2)) {
+                Row(Modifier.topBarMorph("top-actions"), horizontalArrangement = Arrangement.spacedBy(Space.s2)) {
                     CIconButton(CadenceIcons.Pin, if (pinned) "Unpin note" else "Pin note", { pinned = !pinned }, selected = pinned)
                     Box {
                         CIconButton(CadenceIcons.More, "More options", { menuOpen = true })

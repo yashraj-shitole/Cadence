@@ -252,9 +252,10 @@ private fun Modifier.liftIntoGlass(shape: Shape, lift: Float): Modifier =
         .then(if (lift > 0.01f) Modifier.glass(shape, raised = true, materialize = { lift }) else Modifier)
 
 @Composable
-private fun rememberLift(pressed: Boolean): Float {
+private fun rememberLift(pressed: Boolean, rest: Float = 0.6f): Float {
     val motion = Cadence.motion
-    val lift by animateFloatAsState(if (pressed) 1f else 0f, motion.fade(Dur.base, Ease.easeOut), label = "lift")
+    // The thumb is visibly glass at rest (a lens over its track) and goes fully clear and energised while touched.
+    val lift by animateFloatAsState(if (pressed) 1f else rest, motion.fade(Dur.base, Ease.easeOut), label = "lift")
     return lift
 }
 

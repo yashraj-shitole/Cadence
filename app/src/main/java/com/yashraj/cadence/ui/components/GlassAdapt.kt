@@ -7,6 +7,8 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.yashraj.cadence.ui.theme.LocalCadence
+import com.yashraj.cadence.ui.theme.LocalCadenceFlipped
 import kotlin.math.sqrt
 
 /**
@@ -43,6 +45,18 @@ class GlassAdapt(val canFlip: Boolean, private val themeIsDark: Boolean) {
 
 @Composable
 fun rememberGlassAdapt(canFlip: Boolean, themeIsDark: Boolean): GlassAdapt = remember(canFlip, themeIsDark) { GlassAdapt(canFlip, themeIsDark) }
+
+/**
+ * Wraps a small glass element and its glyphs: while [adapt] says the content behind has turned the other way, everything
+ * inside takes the opposite theme, so the glass and what is drawn on it stay legible. Menus, sheets and other big surfaces
+ * do not use this: Apple's large glass adapts but never flips.
+ */
+@Composable
+fun GlassFlip(adapt: GlassAdapt, content: @Composable () -> Unit) {
+    val base = LocalCadence.current
+    val colors = if (adapt.flipped && !base.solidSurfaces) LocalCadenceFlipped.current else base
+    androidx.compose.runtime.CompositionLocalProvider(LocalCadence provides colors, content = content)
+}
 
 data class BackdropReading(val luminance: Float, val busyness: Float)
 

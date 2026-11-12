@@ -39,6 +39,7 @@ import com.yashraj.cadence.ui.components.DayLegend
 import com.yashraj.cadence.ui.components.GroupDivider
 import com.yashraj.cadence.ui.components.MenuItem
 import com.yashraj.cadence.ui.components.SceneryHost
+import com.yashraj.cadence.ui.components.topBarMorph
 import com.yashraj.cadence.ui.components.SectionHeading
 import com.yashraj.cadence.ui.components.SettingRow
 import com.yashraj.cadence.ui.components.SettingsGroup
@@ -86,8 +87,8 @@ fun HabitDetailScreen(
                 .padding(top = Space.s4, start = Space.s5, end = Space.s5),
         ) {
             Row(Modifier.fillMaxWidth().padding(bottom = Space.s3), horizontalArrangement = Arrangement.SpaceBetween) {
-                CIconButton(CadenceIcons.Back, "Back to habits", onBack)
-                Box {
+                CIconButton(CadenceIcons.Back, "Back to habits", onBack, Modifier.topBarMorph("top-leading"))
+                Box(Modifier.topBarMorph("top-actions")) {
                     CIconButton(CadenceIcons.More, "More options", { menuOpen = true })
                     ActionMenu(
                         expanded = menuOpen,

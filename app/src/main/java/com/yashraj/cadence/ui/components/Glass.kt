@@ -389,7 +389,9 @@ fun Modifier.glass(
     val lightSource = LocalGlassLight.current
     val aurora = LocalAurora.current
     val window = LocalWindowInfo.current
-    val backdrop = if (colors.solidSurfaces) null else if (blurred) floating else scenery
+    val inBackdropSource = LocalInBackdropSource.current
+    val backdrop = if (colors.solidSurfaces) null else if (blurred && !inBackdropSource) floating else scenery
+    val photoBackdrop = LocalBackground.current
     val tileLayer = rememberGraphicsLayer()
     var coordinates by remember { mutableStateOf<LayoutCoordinates?>(null) }
     var position by remember { mutableStateOf(Offset.Zero) }
@@ -408,13 +410,13 @@ fun Modifier.glass(
     val glow3 = colors.glow3
     val dark = colors.isDark
     // The lens redraws the screen grid in a stronger ink so its bending can be seen.
-    val gridInk = colors.gridLine.let { it.copy(alpha = (it.alpha * 5f).coerceIn(0.12f, 0.5f)) }
+    val gridInk = if (photoBackdrop != null && !colors.highContrast) Color.Transparent else colors.gridLine.let { it.copy(alpha = (it.alpha * 5f).coerceIn(0.12f, 0.5f)) }
     val reduceMotion = motion.off
     val lightScale = 0.7f + 0.3f * motion.m.coerceAtMost(1f)
     // Like Apple's glass when its window loses focus, it recedes: less light, less lensing.
     val focus by animateFloatAsState(if (window.isWindowFocused) 1f else 0f, tween(320), label = "glassFocus")
     val probeLayer = rememberGraphicsLayer()
-    if (adapt != null && backdrop != null && blurred) {
+    if (adapt != null && backdrop != null) {
         // A few times a second while the backdrop is changing, read a 1/12 scale copy of what is behind this tile.
         LaunchedEffect(backdrop, adapt) {
             snapshotFlow { backdrop.version }.sample(280).collect {
@@ -519,7 +521,8 @@ fun Modifier.glass(
                             corner = corner,
                             // Clear glass keeps the grid legible through rows; floating bars soften what scrolls under them.
                             sigma = (if (blurred) 8f else 1.2f).dp.toPx(),
-                            thickness = (if (blurred) 46f else 36f).dp.toPx() * boost,
+                            // Proportionate to the tile, so a 23dp knob gets a lens it can hold.
+                            thickness = minOf((if (blurred) 46f else 42f).dp.toPx() * boost, minSide * 0.8f),
                             bezel = bezel,
                             // Quantised so a materialising tile makes a handful of lenses, not one per frame.
                             amount = (appear * (0.55f + 0.45f * focus) * 24f).roundToInt() / 24f,
@@ -568,8 +571,8 @@ fun Modifier.glass(
                         // As glass materialises the light travels around its silhouette, settling where the world light is.
                         light = GlassLightMath.rotate(lightSource.direction, (1f - appear) * 2.6f + lightSource.sweepAngle),
                         rim = 1.5.dp.toPx() * boost,
-                        intensity = (if (dark) 0.62f else 0.95f) * lightScale * appear * (0.35f + 0.65f * focus),
-                        shadeAmount = (if (dark) 0.34f else 0.20f) * appear,
+                        intensity = (if (dark) 0.62f else 1.1f) * lightScale * appear * (0.35f + 0.65f * focus),
+                        shadeAmount = (if (dark) 0.34f else 0.28f) * appear,
                         tint = tint,
                         // On a pale tile white light is invisible, so a touch there lights it in the colour of the light behind it.
                         touchTint = if (dark) Color.White else lerp(Color.White, spill ?: Color(0xFF9CC9A8), 0.85f),
@@ -585,6 +588,25 @@ fun Modifier.glass(
             // The 1px rim sits inside the edge: stroke 2px centred on it and keep the inner half.
             clipPath(shapePath) { drawPath(shapePath, edge, style = Stroke(width = 2.dp.toPx())) }
         }
+}
+
+/**
+ * True for everything drawn inside the content that regular (floating) glass copies. A glass tile in there must never
+ * copy that content: it would be copying itself, and the renderer overflows its stack. Such tiles use their screen's
+ * scenery instead.
+ */
+val LocalInBackdropSource = compositionLocalOf { false }
+
+/** Radii for things nested inside rounded containers: inner corner = outer corner minus the inset, so the curves are concentric. */
+object Concentric {
+    fun radius(outer: androidx.compose.ui.unit.Dp, inset: androidx.compose.ui.unit.Dp, min: androidx.compose.ui.unit.Dp = 10.dp): androidx.compose.ui.unit.Dp =
+        (outer - inset).coerceAtLeast(min)
+
+    /** Buttons in a dialog, which is a sheet-radius card padded by 24dp. */
+    val dialogButton: androidx.compose.ui.unit.Dp get() = radius(Radius.sheet, 24.dp)
+
+    /** Buttons in the Next up card, a sheet-radius card padded by 20dp. */
+    val nextUpButton: androidx.compose.ui.unit.Dp get() = radius(Radius.sheet, 20.dp)
 }
 
 /**

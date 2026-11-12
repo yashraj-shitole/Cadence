@@ -22,6 +22,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.yashraj.cadence.feel.HapticKind
 import com.yashraj.cadence.ui.components.ButtonKind
 import com.yashraj.cadence.ui.components.CButton
+import com.yashraj.cadence.ui.components.Concentric
 import com.yashraj.cadence.ui.components.LocalHaptics
 import com.yashraj.cadence.ui.components.LocalOnGlass
 import com.yashraj.cadence.ui.components.glass
@@ -73,8 +74,8 @@ fun UpdateDialog(version: String, current: String, onLater: () -> Unit, onDownlo
                 maxLines = 6,
             )
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s2, Alignment.End), verticalAlignment = Alignment.CenterVertically) {
-                CButton("Later", onLater, kind = ButtonKind.Glass)
-                CButton("Download", onDownload)
+                CButton("Later", onLater, kind = ButtonKind.Glass, cornerRadius = Concentric.dialogButton)
+                CButton("Download", onDownload, cornerRadius = Concentric.dialogButton)
             }
         }
         }

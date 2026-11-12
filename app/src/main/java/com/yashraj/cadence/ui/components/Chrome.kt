@@ -232,6 +232,12 @@ private fun RowScope.TabItem(tab: TabId, selected: TabId?, onSelect: (TabId) -> 
  */
 @Composable
 fun CToast(message: String, token: Long, durationMs: Int, onUndo: (() -> Unit)?, modifier: Modifier = Modifier) {
+    val adapt = rememberGlassAdapt(canFlip = true, themeIsDark = Cadence.colors.isDark)
+    GlassFlip(adapt) { ToastBody(message, token, durationMs, onUndo, modifier, adapt) }
+}
+
+@Composable
+private fun ToastBody(message: String, token: Long, durationMs: Int, onUndo: (() -> Unit)?, modifier: Modifier, adapt: GlassAdapt) {
     val colors = Cadence.colors
     val motion = Cadence.motion
     val density = androidx.compose.ui.platform.LocalDensity.current
@@ -250,7 +256,7 @@ fun CToast(message: String, token: Long, durationMs: Int, onUndo: (() -> Unit)?,
                 alpha = (appear.value * 2.2f).coerceAtMost(1f)
             }
             .heightIn(min = 52.dp)
-            .glass(shape, raised = true, blurred = true, materialize = { appear.value }, adapt = rememberGlassAdapt(canFlip = false, themeIsDark = colors.isDark))
+            .glass(shape, raised = true, blurred = true, materialize = { appear.value }, adapt = adapt)
             .drawBehind {
                 val inset = 22.dp.toPx()
                 drawRect(

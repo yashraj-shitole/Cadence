@@ -54,6 +54,7 @@ import com.yashraj.cadence.ui.ImportChoiceDialog
 import com.yashraj.cadence.ui.UpdateStatus
 import com.yashraj.cadence.ui.components.ButtonKind
 import com.yashraj.cadence.ui.components.CButton
+import com.yashraj.cadence.ui.components.Concentric
 import com.yashraj.cadence.ui.components.CCheck
 import com.yashraj.cadence.ui.components.CChip
 import com.yashraj.cadence.ui.components.CIconButton
@@ -66,6 +67,7 @@ import com.yashraj.cadence.ui.components.LocalHaptics
 import com.yashraj.cadence.ui.components.LocalOnGlass
 import com.yashraj.cadence.ui.components.PalettePicker
 import com.yashraj.cadence.ui.components.SceneryHost
+import com.yashraj.cadence.ui.components.topBarMorph
 import com.yashraj.cadence.ui.components.SectionHeading
 import com.yashraj.cadence.ui.components.SettingRow
 import com.yashraj.cadence.ui.components.SettingStack
@@ -153,7 +155,7 @@ fun SettingsScreen(vm: AppViewModel, onBack: () -> Unit) {
                 .statusBarsPadding()
                 .padding(top = Space.s4, start = Space.s5, end = Space.s5),
         ) {
-            Row(Modifier.fillMaxWidth().padding(bottom = Space.s4)) { CIconButton(CadenceIcons.Back, "Back to Today", onBack) }
+            Row(Modifier.fillMaxWidth().padding(bottom = Space.s4)) { CIconButton(CadenceIcons.Back, "Back to Today", onBack, Modifier.topBarMorph("top-actions")) }
             CText("Settings", CadenceType.display, Modifier.padding(bottom = 4.dp), color = colors.ink)
             Column(
                 Modifier
@@ -439,8 +441,8 @@ private fun EraseDialog(onCancel: () -> Unit, onErase: () -> Unit) {
                 maxLines = 5,
             )
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s2, Alignment.End), verticalAlignment = Alignment.CenterVertically) {
-                CButton("Keep my data", onCancel, kind = ButtonKind.Glass)
-                CButton("Erase everything", onErase, kind = ButtonKind.Danger)
+                CButton("Keep my data", onCancel, kind = ButtonKind.Glass, cornerRadius = Concentric.dialogButton)
+                CButton("Erase everything", onErase, kind = ButtonKind.Danger, cornerRadius = Concentric.dialogButton)
             }
         }
         }
