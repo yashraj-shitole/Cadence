@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en" data-theme="light" data-palette="meadow" data-motion="standard" data-glass="frosted" data-backdrop="glow" data-perf="balanced" data-3d="off">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cadence: habits, tasks and notes that keep a steady beat</title>
+<meta name="description" content="Cadence is a calm Android app that keeps your daily habits, to-dos and notes in one place, and shows the one thing to do next.">
+<meta name="theme-color" content="#f4f4f1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%279%27 fill=%27%231d6a3a%27/%3E%3Crect x=%275%27 y=%2713%27 width=%276%27 height=%276%27 rx=%273%27 fill=%27%23fff%27/%3E%3Crect x=%2713%27 y=%2713%27 width=%276%27 height=%276%27 rx=%273%27 fill=%27%23fff%27/%3E%3Crect x=%2721%27 y=%2713%27 width=%276%27 height=%276%27 rx=%273%27 fill=%27%23fff%27 opacity=%27.45%27/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Geist:wght@400..700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/cadence.css">
+<link rel="stylesheet" href="assets/landing.css">
+<script>
+/* Apply saved look before first paint so the page never flashes the wrong theme. */
+(function () {
+  var d = document.documentElement, s = {};
+  try { s = JSON.parse(localStorage.getItem('cadence-landing') || '{}'); } catch (e) {}
+  var dark = s.theme === 'dark' || ((s.theme || 'system') === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
+  var hc = s.contrast === 'high' || matchMedia('(prefers-contrast: more)').matches;
+  d.dataset.theme = (hc ? 'hc-' : '') + (dark ? 'dark' : 'light');
+  if (s.palette) d.dataset.palette = s.palette;
+  d.classList.add('js');
+})();
+</script>
+</head>
+<body>
+<!-- Set data-store-url to your Google Play link to turn the "Get Cadence" buttons into store links. -->
+<div class="bg" aria-hidden="true"><i class="bg__glow bg__glow--1"></i><i class="bg__glow bg__glow--3"></i><i class="bg__glow bg__glow--2"></i></div>
+<canvas id="gl" aria-hidden="true"></canvas>
+
+<div class="cd-stage page" id="page" data-store-url="">
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="nav" id="nav">
+  <div class="nav__bar cd-glass cd-glass--raised">
+    <a class="logo" href="#top" aria-label="Cadence, back to top"><span class="logo__mark" aria-hidden="true"><i></i><i></i><i></i></span><span>Cadence</span></a>
+    <nav class="nav__links" aria-label="Sections">
+      <a href="#principles">Why</a>
+      <a href="#screens">Screens</a>
+      <a href="#streaks">Streaks</a>
+      <a href="#feel">Feel</a>
+      <a href="#privacy">Privacy</a>
+    </nav>
+    <div class="nav__actions">
+      <button class="perfpill" id="perfPill" type="button" aria-haspopup="dialog" aria-controls="look" title="Performance mode"><i class="perfpill__dot" aria-hidden="true"></i><span id="perfPillText">Auto</span></button>
+      <button class="cd-iconbtn cd-press" id="lookBtn" type="button" aria-haspopup="dialog" aria-controls="look" aria-label="Look and performance"><i data-icon="sliders"></i></button>
+      <a class="cd-btn cd-btn--primary cd-press nav__cta" href="#get" data-get>Get Cadence</a>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+<!-- ================= HERO ================= -->
+<section class="hero" id="top">
+  <div class="wrap hero__grid">
+    <div class="hero__copy">
+      <p class="cd-eyebrow rv">Habits, tasks and notes</p>
+      <h1 class="hero__title rv" style="--i:1">Keep a steady <span class="hero__beat">beat<svg viewBox="0 0 200 14" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M3 9 C 40 3, 70 12, 100 7 S 165 4, 197 8"/></svg></span>.</h1>
+      <p class="hero__lede rv" style="--i:2">Cadence is a calm Android app that keeps your day in one place. Open it and you know two things within two seconds: the one thing to do now, and how the day is going.</p>
+      <div class="hero__cta rv" style="--i:3">
+        <a class="cd-btn cd-btn--primary cd-press" href="#get" data-get>Get Cadence</a>
+        <a class="cd-btn cd-btn--glass cd-press" href="#screens">See every screen</a>
+      </div>
+      <ul class="hero__facts rv" style="--i:4">
+        <li><i data-icon="user-off" data-sm></i>No account</li>
+        <li><i data-icon="wifi-off" data-sm></i>No network</li>
+      </ul>
+      <figure class="quote quote--inline rv" style="--i:5">
+        <blockquote>You only ever need to do the next beat.</blockquote>
+      </figure>
+    </div>
+    <div class="hero__visual rv" style="--i:2">
+      <div class="tilt" data-tilt>
+        <div class="phone" data-stage="hero" id="heroPhone" data-screen="today"></div>
+      </div>
+      <p class="hint"><i data-icon="pointer" data-sm></i>This is live. Tap a check, or press Mark done.</p>
+    </div>
+  </div>
+  <a class="scrollcue" href="#principles" aria-label="Scroll to why Cadence"><i data-icon="chevron-down"></i></a>
+</section>
+
+<!-- ================= PRINCIPLES ================= -->
+<section class="sec" id="principles">
+  <div class="wrap">
+    <header class="sec__head">
+      <p class="cd-eyebrow rv">Why Cadence</p>
+      <h2 class="sec__title rv" style="--i:1">Progress, without the pressure.</h2>
+      <p class="sec__lede rv" style="--i:2">Everything due today is a beat: a habit to log or a task to finish. Six rules keep the app quiet enough to use every day.</p>
+    </header>
+
+    <div class="bento">
+      <article class="card cd-glass rv" data-spot style="--i:0">
+        <div class="card__n">1</div>
+        <h3>One next action</h3>
+        <p>Today names a single beat. It is never a list.</p>
+        <div class="demo demo--next cd-glass cd-glass--raised" id="demoNext">
+          <div class="cd-eyebrow">Next up</div>
+          <div class="demo__swap"><h4 id="demoNextTitle">Read 10 pages</h4><p id="demoNextLine">After chai, on the balcony · Minimum: 1 page</p></div>
+          <div class="cd-nextup__actions"><button class="cd-btn cd-btn--primary cd-press" id="demoNextDone" type="button">Mark done</button><button class="cd-btn cd-btn--glass cd-press" id="demoNextLater" type="button">Later</button></div>
+        </div>
+      </article>
+
+      <article class="card cd-glass rv" data-spot style="--i:1">
+        <div class="card__n">2</div>
+        <h3>Progress without pressure</h3>
+        <p>A missed day is a small grey dot. Never red, never an X, never a notification.</p>
+        <div class="demo demo--week">
+          <div class="weekbig" role="img" aria-label="Last 7 days: done, minimum, done, rest day, missed, done, today">
+            <span><i class="cd-dot cd-dot--done"></i><b>M</b></span><span><i class="cd-dot cd-dot--min"></i><b>T</b></span><span><i class="cd-dot cd-dot--done"></i><b>W</b></span><span><i class="cd-dot cd-dot--rest"></i><b>T</b></span><span><i class="cd-dot cd-dot--miss"></i><b>F</b></span><span><i class="cd-dot cd-dot--done"></i><b>S</b></span><span><i class="cd-dot cd-dot--today"></i><b>S</b></span>
+          </div>
+          <div class="cd-legend"><span><i class="cd-dot cd-dot--done"></i>Done</span><span><i class="cd-dot cd-dot--min"></i>Minimum</span><span><i class="cd-dot cd-dot--rest"></i>Rest</span><span><i class="cd-dot cd-dot--miss"></i>Missed</span></div>
+        </div>
+      </article>
+
+      <article class="card cd-glass rv" data-spot style="--i:2">
+        <div class="card__n">3</div>
+        <h3>Capture in one tap</h3>
+        <p>One sheet, keyboard up. A title alone is a complete entry.</p>
+        <form class="demo demo--add" id="demoAdd" autocomplete="off">
+          <label class="cd-field"><input id="demoAddInput" placeholder="What needs doing?" aria-label="Task title" maxlength="40"></label>
+          <button class="cd-btn cd-btn--primary cd-press" type="submit">Add task</button>
+          <div class="cd-list" id="demoAddList" aria-live="polite"></div>
+        </form>
+      </article>
+
+      <article class="card cd-glass rv" data-spot style="--i:3">
+        <div class="card__n">4</div>
+        <h3>Undo instead of confirm</h3>
+        <p>Completing and deleting are instant, and reversible for five seconds. No dialogs in the way.</p>
+        <div class="demo demo--undo" id="demoUndo">
+          <div class="cd-row cd-glass" id="demoUndoRow"><div class="cd-row__body"><div class="cd-row__title">Dal recipe from Aai</div><div class="cd-row__sub">Note · Home</div></div><button class="cd-btn cd-btn--danger cd-press" type="button" id="demoUndoBtn">Delete note</button></div>
+          <div class="demo__toast" id="demoUndoToast" aria-live="polite"></div>
+        </div>
+      </article>
+
+      <article class="card cd-glass rv" data-spot style="--i:4">
+        <div class="card__n">5</div>
+        <h3>Calm by default</h3>
+        <p>Nothing blinks, bounces for attention, or badges.</p>
+        <ul class="ones">
+          <li><b>1</b><span>accent colour</span></li>
+          <li><b>1</b><span>number on Today</span></li>
+          <li><b>1</b><span>daily reminder</span></li>
+        </ul>
+      </article>
+
+      <article class="card cd-glass rv" data-spot style="--i:5">
+        <div class="card__n">6</div>
+        <h3>You set the feel</h3>
+        <p>Motion and haptics each have four levels. Your system's reduce motion, transparency and contrast settings always win.</p>
+        <a class="cd-btn cd-btn--glass cd-press" href="#feel">Try the controls<i data-icon="arrow-right" data-sm></i></a>
+      </article>
+    </div>
+
+    <figure class="quote rv">
+      <blockquote>Small steps, taken daily, are the whole trick.</blockquote>
+    </figure>
+  </div>
+</section>
+
+<!-- ================= SCREENS TOUR ================= -->
+<section class="sec" id="screens">
+  <div class="wrap">
+    <header class="sec__head">
+      <p class="cd-eyebrow rv">Eight screens and one sheet</p>
+      <h2 class="sec__title rv" style="--i:1">Every screen has one job.</h2>
+      <p class="sec__lede rv" style="--i:2">Pick a screen. The phone is live, so tap around inside it: check things off, filter, search, type, change the palette.</p>
+    </header>
+
+    <div class="tour rv">
+      <div class="tour__tabs" role="tablist" aria-label="Screens" id="tourTabs"></div>
+      <div class="tour__phone">
+        <div class="tilt" data-tilt>
+          <div class="phone" data-stage="tour" id="tourPhone"></div>
+        </div>
+        <div class="tour__step">
+          <button class="cd-iconbtn cd-glass cd-press" type="button" id="tourPrev" aria-label="Previous screen"><i data-icon="chevron-left"></i></button>
+          <span id="tourCount" class="tour__count">1 / 8</span>
+          <button class="cd-iconbtn cd-glass cd-press" type="button" id="tourNext" aria-label="Next screen"><i data-icon="chevron-right"></i></button>
+        </div>
+      </div>
+      <div class="tour__info" id="tourInfo" role="tabpanel" aria-live="polite"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= STREAKS ================= -->
+<section class="sec" id="streaks">
+  <div class="wrap split">
+    <div class="split__copy">
+      <p class="cd-eyebrow rv">Forgiving streaks</p>
+      <h2 class="sec__title rv" style="--i:1">A rest day keeps the streak.</h2>
+      <p class="sec__lede rv" style="--i:2">Streaks in Cadence count the days you kept, not the days you were perfect. Tap any day in the grid to change it and watch the numbers follow the same rules as the app.</p>
+      <ul class="rules rv" style="--i:3">
+        <li><i class="cd-dot cd-dot--done"></i><div><b>Done</b> adds a day.</div></li>
+        <li><i class="cd-dot cd-dot--min"></i><div><b>Minimum</b> counts in full. One page is still reading.</div></li>
+        <li><i class="cd-dot cd-dot--rest"></i><div><b>Rest</b> keeps the streak without adding to it.</div></li>
+        <li><i class="cd-dot cd-dot--miss"></i><div><b>Missed</b> is the only thing that ends a streak, and it stays a quiet grey dot.</div></li>
+      </ul>
+      <figure class="quote quote--inline rv" style="--i:4">
+        <blockquote>A missed day is a pause, not a verdict.</blockquote>
+      </figure>
+    </div>
+
+    <div class="split__visual rv" style="--i:2">
+      <div class="streakcard">
+        <div class="streakcard__top cd-glass cd-glass--raised">
+          <div><div class="cd-eyebrow">Read 10 pages</div><div class="cd-stat"><b id="streakN">12</b><span class="cd-row__title">day streak</span></div></div>
+          <div class="streakcard__active"><div class="cd-row__title" id="streakActive">19 of 21</div><div class="cd-row__sub">active days</div></div>
+        </div>
+        <div class="sgridwrap"><div class="sgrid__head" aria-hidden="true"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>
+        <div class="sgrid" id="sgrid" data-stage="streak" role="group" aria-label="Five weeks of Read 10 pages. Tap a day to change it."></div></div>
+        <div class="streakcard__bottom cd-glass"><div class="cd-legend"><span><i class="cd-dot cd-dot--done"></i>Done</span><span><i class="cd-dot cd-dot--min"></i>Minimum</span><span><i class="cd-dot cd-dot--rest"></i>Rest</span><span><i class="cd-dot cd-dot--miss"></i>Missed</span></div>
+        <div class="streakcard__foot">
+          <p id="streakSay" aria-live="polite">12 days kept in a row. Today is still open.</p>
+          <button class="cd-btn cd-btn--quiet cd-press" type="button" id="streakReset"><i data-icon="undo" data-sm></i>Reset</button>
+        </div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FEEL + PERFORMANCE ================= -->
+<section class="sec" id="feel">
+  <div class="wrap">
+    <header class="sec__head">
+      <p class="cd-eyebrow rv">You set the feel</p>
+      <h2 class="sec__title rv" style="--i:1">Calm is a setting, and it is yours.</h2>
+      <p class="sec__lede rv" style="--i:2">These are the app's own controls, wired to this page. Move them and everything you see follows: the colours, the glass, the motion and the 3D.</p>
+    </header>
+
+    <div class="feel">
+      <div class="feel__panel cd-glass cd-group rv">
+        <div class="cd-setting--stack">
+          <div class="cd-setting__title">Motion</div>
+          <div class="cd-level" id="lvMotion" data-v="2">
+            <div class="cd-level__track"><i class="cd-level__fill"></i><div class="cd-level__stops"><i></i><i></i><i></i><i></i></div><i class="cd-level__thumb"></i><input type="range" min="0" max="3" step="1" value="2" aria-label="Motion level"></div>
+            <div class="cd-level__labels"><span>Off</span><span>Subtle</span><span>Standard</span><span>Expressive</span></div>
+          </div>
+          <div class="cd-setting__sub" id="lvMotionNote">Multiplies travel and overshoot everywhere on this page.</div>
+        </div>
+        <div class="cd-setting--stack">
+          <div class="cd-setting__title">Haptics</div>
+          <div class="cd-level" id="lvHaptics" data-v="2">
+            <div class="cd-level__track"><i class="cd-level__fill"></i><div class="cd-level__stops"><i></i><i></i><i></i><i></i></div><i class="cd-level__thumb"></i><input type="range" min="0" max="3" step="1" value="2" aria-label="Haptics level"></div>
+            <div class="cd-level__labels"><span>Off</span><span>Soft</span><span>Balanced</span><span>Firm</span></div>
+          </div>
+          <div class="cd-setting__sub" id="lvHapticsNote">On an Android phone this page vibrates like the app does.</div>
+        </div>
+        <div class="cd-setting--stack">
+          <div class="cd-setting__title">Colour palette</div>
+          <div class="cd-palettes" data-palettes></div>
+        </div>
+        <div class="cd-setting--stack">
+          <div class="cd-setting__title">Theme</div>
+          <div class="cd-seg" data-seg="theme" data-n="3" data-i="2"><i class="cd-seg__thumb"></i><button type="button" data-v="light">Light</button><button type="button" data-v="dark">Dark</button><button type="button" data-v="system">System</button></div>
+        </div>
+      </div>
+
+      <div class="feel__side">
+        <div class="feel__stage rv" data-stage="feel" aria-hidden="true"></div>
+        <div class="feel__try cd-glass cd-glass--raised rv">
+          <div class="cd-eyebrow">Try it here</div>
+          <div class="cd-list" id="feelTry"></div>
+          <p class="cd-setting__sub">Check and uncheck these with different Motion levels to feel the difference.</p>
+        </div>
+      </div>
+    </div>
+
+    <figure class="quote rv">
+      <blockquote>Calm is a setting. You set it.</blockquote>
+    </figure>
+  </div>
+</section>
+
+<!-- ================= PRIVACY ================= -->
+<section class="sec" id="privacy">
+  <div class="wrap">
+    <header class="sec__head">
+      <p class="cd-eyebrow rv">Yours, on your phone</p>
+      <h2 class="sec__title rv" style="--i:1">No account. No network. No audience.</h2>
+      <p class="sec__lede rv" style="--i:2">Cadence never asks who you are and never goes online. Everything you write stays in a database on the device.</p>
+    </header>
+    <div class="facts">
+      <article class="fact cd-glass rv" data-spot style="--i:0"><i data-icon="database"></i><h3>Stored locally</h3><p>Habits, logs, tasks and notes live in a SQLite database on your phone. Settings sit beside them.</p></article>
+      <article class="fact cd-glass rv" data-spot style="--i:1"><i data-icon="wifi-off"></i><h3>Works offline, always</h3><p>There is no sync, no sign-in and no server. Aeroplane mode changes nothing.</p></article>
+      <article class="fact cd-glass rv" data-spot style="--i:2"><i data-icon="file-text"></i><h3>Notes are plain Markdown</h3><p>Headings, lists, to-dos, quotes and code. Type <kbd>/</kbd> for the menu, or use the shortcuts you already know. Export any note as a <kbd>.md</kbd> file.</p></article>
+      <article class="fact cd-glass rv" data-spot style="--i:3"><i data-icon="bell"></i><h3>One reminder a day</h3><p>A single daily nudge at the time you choose. Nothing else ever notifies you.</p></article>
+      <article class="fact cd-glass rv" data-spot style="--i:4"><i data-icon="download"></i><h3>Take it with you</h3><p>Export your data whenever you like. It is yours, in a format you can read.</p></article>
+      <article class="fact cd-glass rv" data-spot style="--i:5"><i data-icon="eye"></i><h3>Built to be read</h3><p>Text holds at least 4.5:1 contrast in every palette. High contrast themes reach 7:1, and every state has a shape as well as a colour.</p></article>
+    </div>
+    <figure class="quote rv">
+      <blockquote>Your days are nobody's business but yours.</blockquote>
+    </figure>
+  </div>
+</section>
+
+<!-- ================= GET ================= -->
+<section class="sec sec--get" id="get">
+  <div class="wrap">
+    <div class="get rv">
+      <div class="get__stage" data-stage="get" aria-hidden="true"></div>
+      <div class="get__copy cd-glass cd-glass--raised">
+        <p class="cd-eyebrow">That's today</p>
+        <h2 class="sec__title">Start with the next beat.</h2>
+        <p class="sec__lede">Add one habit you can do in two minutes. Cadence will keep the count, and keep quiet about the rest.</p>
+        <div class="hero__cta">
+          <a class="cd-btn cd-btn--glass cd-press" href="#top">Back to the top</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="foot">
+  <div class="wrap foot__in">
+    <a class="logo" href="#top"><span class="logo__mark" aria-hidden="true"><i></i><i></i><i></i></span><span>Cadence</span></a>
+    <p>Habits, tasks and notes that keep a steady beat.</p>
+    <nav aria-label="Footer"><a href="#principles">Why</a><a href="#screens">Screens</a><a href="#streaks">Streaks</a><a href="#feel">Feel</a><a href="#privacy">Privacy</a></nav>
+  </div>
+</footer>
+
+<!-- Mobile navigation: the app's own tab bar. -->
+<nav class="mtab cd-tabbar cd-glass cd-glass--raised" aria-label="Sections" id="mtab">
+  <a class="cd-tab" href="#top" data-sec="top"><i data-icon="sun"></i><span>Today</span></a>
+  <a class="cd-tab" href="#screens" data-sec="screens"><i data-icon="phone"></i><span>Screens</span></a>
+  <a class="cd-add" href="#get" aria-label="Get Cadence"><i data-icon="plus"></i></a>
+  <a class="cd-tab" href="#streaks" data-sec="streaks"><i data-icon="repeat"></i><span>Streaks</span></a>
+  <a class="cd-tab" href="#feel" data-sec="feel"><i data-icon="sliders"></i><span>Feel</span></a>
+</nav>
+
+<!-- Look and performance sheet -->
+<div class="look" id="look" role="dialog" aria-modal="true" aria-label="Look and performance" hidden>
+  <div class="cd-scrim look__scrim" data-close></div>
+  <div class="look__sheet cd-sheet cd-glass cd-glass--raised">
+    <i class="cd-sheet__grab" aria-hidden="true"></i>
+    <div class="look__head"><h2>Look and performance</h2><button class="cd-iconbtn cd-press" type="button" data-close aria-label="Close"><i data-icon="x"></i></button></div>
+    <div><div class="look__label">Colour palette</div><div class="cd-palettes" data-palettes></div></div>
+    <div><div class="look__label">Theme</div><div class="cd-seg" data-seg="theme" data-n="3" data-i="2"><i class="cd-seg__thumb"></i><button type="button" data-v="light">Light</button><button type="button" data-v="dark">Dark</button><button type="button" data-v="system">System</button></div></div>
+    <div><div class="look__label">Performance</div><div class="cd-seg" data-seg="perf" data-n="4" data-i="0"><i class="cd-seg__thumb"></i><button type="button" data-v="auto">Auto</button><button type="button" data-v="full">Full</button><button type="button" data-v="light">Light</button><button type="button" data-v="off">Essential</button></div>
+    <p class="cd-setting__sub look__note" id="lookNote"></p></div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+</div>
+
+<script src="assets/app.js" defer></script>
+</body>
+</html>
