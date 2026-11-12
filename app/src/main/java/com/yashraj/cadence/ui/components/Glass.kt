@@ -396,6 +396,8 @@ fun Modifier.glass(
     val specular = remember { SpecularCache() }
     val touch = LocalGlassTouch.current
     val fill = if (raised) colors.glassRaised else colors.glass
+    // Rows and cards are clear glass: the middle should look through to the ground, with the rim and lens doing the work.
+    val centreFill = if (!raised && !blurred) 0.4f else 1f
     val bevel = if (raised) colors.shadows.float else colors.shadows.glass
     val sheen = colors.glassSheen
     val edge = colors.glassEdge
@@ -531,7 +533,7 @@ fun Modifier.glass(
                         drawLayer(tileLayer)
                     }
                 }
-                drawRect(fillNow)
+                drawRect(fillNow.copy(alpha = fillNow.alpha * centreFill))
                 if (tintNow != Color.Unspecified) drawRect(tintNow)
                 if (!solid) {
                     val angle = Math.toRadians(145.0)
@@ -540,7 +542,7 @@ fun Modifier.glass(
                     val center = Offset(size.width / 2, size.height / 2)
                     drawRect(
                         Brush.linearGradient(
-                            0f to sheen,
+                            0f to sheen.copy(alpha = sheen.alpha * centreFill),
                             0.45f to sheen.copy(alpha = 0f),
                             1f to sheen.copy(alpha = 0f),
                             start = center - dir * (length / 2),
@@ -548,7 +550,13 @@ fun Modifier.glass(
                         ),
                     )
                 }
-                drawIntoCanvas { canvas -> bevel.filter { it.inset }.forEach { insetShadow(canvas, it, rr) } }
+                drawIntoCanvas { canvas ->
+                    bevel.filter { it.inset }.forEach {
+                        // The soft white inner glow is what frosts the middle of a row; keep the crisp rim and thin the haze.
+                        val layer = if (centreFill < 1f && it.blur > 4f && it.color.alpha > 0.2f) ShadowLayer(true, it.x, it.y, it.blur, it.spread, it.color.copy(alpha = it.color.alpha * centreFill)) else it
+                        insetShadow(canvas, layer, rr)
+                    }
+                }
                 if (!solid && appear > 0f) {
                     // The light: key and fill rims from the world light, tinted by the background light behind this tile.
                     val tint = lerp(Color.White, spill ?: Color.White, 0.38f)
