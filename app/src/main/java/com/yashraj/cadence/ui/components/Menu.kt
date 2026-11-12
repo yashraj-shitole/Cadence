@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
@@ -41,6 +43,9 @@ fun ActionMenu(expanded: Boolean, onDismiss: () -> Unit, items: List<MenuItem>) 
     if (!expanded) return
     val colors = Cadence.colors
     val shape = RoundedCornerShape(Radius.card)
+    val appear = remember { androidx.compose.animation.core.Animatable(0f) }
+    val motion = Cadence.motion
+    LaunchedEffect(Unit) { appear.animateTo(1f, motion.fade(com.yashraj.cadence.ui.theme.Dur.base, com.yashraj.cadence.ui.theme.Ease.easeOut)) }
     // The popup is its own window, sized to its content, so it clips anything drawn outside the menu: the drop
     // shadow came out as a square. Pad the window by the shadow's reach and position the menu inside the padding.
     val bleed = shadowBleed(colors.shadows.float).dp
@@ -67,7 +72,7 @@ fun ActionMenu(expanded: Boolean, onDismiss: () -> Unit, items: List<MenuItem>) 
             Modifier
                 .width(200.dp)
                 .pointerInput(Unit) { detectTapGestures { } }
-                .glass(shape, raised = true)
+                .glass(shape, raised = true, materialize = { appear.value })
                 .padding(vertical = Space.s2),
         ) {
             items.forEach { item ->

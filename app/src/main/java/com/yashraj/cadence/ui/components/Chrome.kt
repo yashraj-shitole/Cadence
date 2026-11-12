@@ -97,7 +97,7 @@ fun CTabBar(
         modifier
             .fillMaxWidth()
             .height(Sizes.tabbarHeight)
-            .glass(RoundedCornerShape(Radius.pill), raised = true, blurred = true)
+            .glass(RoundedCornerShape(Radius.pill), raised = true, blurred = true, interactive = true)
             .padding(horizontal = Space.s2)
             .semantics { contentDescription = "Main" },
         verticalAlignment = Alignment.CenterVertically,
@@ -187,10 +187,11 @@ fun CToast(message: String, token: Long, durationMs: Int, onUndo: (() -> Unit)?,
             .offset { IntOffset(0, with(density) { (motion.travel(16f) * (1f - appear.value)).dp.roundToPx() }) }
             .graphicsLayer {
                 compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.ModulateAlpha
-                alpha = appear.value
+                // The lens does most of the arriving; the fade only finishes it off.
+                alpha = (appear.value * 2.2f).coerceAtMost(1f)
             }
             .heightIn(min = 52.dp)
-            .glass(shape, raised = true, blurred = true)
+            .glass(shape, raised = true, blurred = true, materialize = { appear.value })
             .drawBehind {
                 val inset = 22.dp.toPx()
                 drawRect(

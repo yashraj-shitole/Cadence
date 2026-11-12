@@ -8,6 +8,16 @@ import android.graphics.RuntimeShader
 import android.graphics.Shader
 import android.os.Build
 import androidx.compose.foundation.shape.RoundedCornerShape
+import kotlinx.coroutines.launch
+import com.yashraj.cadence.ui.theme.Ease
+import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.ShaderBrush
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.Animatable
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.compositionLocalOf
@@ -90,18 +100,26 @@ fun Modifier.backdropSource(state: BackdropState): Modifier = this
     }
 
 /**
- * Edge refraction for a clear glass tile, as a shader over the tile's copy of the backdrop. Near the rim the
- * backdrop is sampled from further inside, so it is magnified like the thick edge of a lens; red and blue are
- * sampled slightly apart for a faint colour fringe; and light catches the bevel, brighter at the upper left and
- * darker at the lower right. The middle of the tile is untouched. Needs Android 13; earlier versions get the blur.
+ * The lens. Apple's Liquid Glass defines itself by bending light at its edges, not by blurring, so this models a
+ * slab of glass whose rim is a convex "squircle" bezel: height h(x) = (1 - (1 - x)^4)^(1/4), x running from 0 at the
+ * outer edge to 1 where the flat top begins. A ray coming straight down meets the surface at an angle whose tangent is
+ * the slope of that profile; Snell's law at n = 1.5 bends it toward the normal, and by the time it reaches the
+ * backdrop beneath it has moved sideways by (height x tan(incidence - refraction)). That shift is exactly how far
+ * inward the backdrop is sampled, so the rim magnifies it like the thick edge of a lens, strongest just inside the
+ * edge and easing to nothing across the bezel; red and blue are sampled a little apart for a faint colour fringe.
+ * The middle of the tile is untouched. Needs Android 13; earlier versions get the blur alone.
  */
 private const val RefractionAgsl = """
 uniform shader content;
 uniform float2 size;
 uniform float radius;
 uniform float bezel;
-uniform float strength;
+uniform float thickness;
+uniform float amount;
 uniform float dispersion;
+uniform float2 origin;
+uniform float gridStep;
+uniform half4 gridColor;
 
 float sdRoundRect(float2 p, float2 halfSize, float r) {
     float2 q = abs(p) - (halfSize - float2(r));
@@ -112,22 +130,90 @@ half4 main(float2 coord) {
     float2 halfSize = size * 0.5;
     float2 p = coord - halfSize;
     float depth = -sdRoundRect(p, halfSize, radius);
-    if (depth >= bezel) {
+    if (depth >= bezel || amount <= 0.0) {
         return content.eval(coord);
     }
-    float t = clamp(1.0 - depth / bezel, 0.0, 1.0);
-    float k = t * t;
+    float x = clamp(depth / bezel, 0.0, 1.0);
+    float u = 1.0 - x;
+    float u4 = u * u * u * u;
+    float inner = max(1.0 - u4, 1.0e-4);
+    float h = pow(inner, 0.25);
+    float slope = (u * u * u * pow(inner, -0.75)) * thickness / bezel;
+    float theta1 = atan(slope);
+    float theta2 = asin(sin(theta1) / 1.5);
+    float shift = h * thickness * tan(theta1 - theta2) * amount;
     float2 n = normalize(float2(
         sdRoundRect(p + float2(1.0, 0.0), halfSize, radius) - sdRoundRect(p - float2(1.0, 0.0), halfSize, radius),
         sdRoundRect(p + float2(0.0, 1.0), halfSize, radius) - sdRoundRect(p - float2(0.0, 1.0), halfSize, radius)));
-    float2 uv = coord - n * strength * k;
-    float2 fringe = n * dispersion * k;
+    float2 uv = coord - n * shift;
+    float2 fringe = n * shift * dispersion;
     half4 c = half4(content.eval(uv - fringe).r, content.eval(uv).g, content.eval(uv + fringe).b, 1.0);
-    float lit = dot(n, normalize(float2(-0.55, -0.83)));
-    float glow = max(lit, 0.0) * k * k * 0.20;
-    float shade = max(-lit, 0.0) * k * k * 0.10;
-    c.rgb = c.rgb + half3(glow) - half3(shade);
+    // The screen's grid, redrawn crisp at the displaced position: the blur has already softened the real one, and
+    // lines are what make a lens visible. They bend where the glass bends and fade out toward the flat middle.
+    float2 s = uv + origin;
+    float2 g = abs(fract((s + 1.0) / gridStep - 0.5) - 0.5) * gridStep;
+    float line = 1.0 - smoothstep(0.4, 1.4, min(g.x, g.y));
+    c.rgb = mix(c.rgb, gridColor.rgb, half(line * gridColor.a * (1.0 - x)));
     return c;
+}
+"""
+
+/**
+ * The light on the glass: a thin rim of specular light along the edges that face the light, a fainter reflection on
+ * the opposite edges, a soft glow inside the lit side, and a slim shadow edge where the glass turns away (which is
+ * what separates a pale tile from a pale ground). All of it comes from the shape's edge normal, so it follows any
+ * corner radius. A touch adds light from within, strongest under the fingertip and spreading outward.
+ */
+private const val SpecularAgsl = """
+uniform float2 size;
+uniform float radius;
+uniform float2 light;
+uniform float rim;
+uniform float intensity;
+uniform float shadeAmount;
+uniform half3 tint;
+uniform half3 touchTint;
+uniform half3 shadeColor;
+uniform float2 touch;
+uniform float touchRadius;
+uniform float touchAmount;
+
+float sdRoundRect(float2 p, float2 halfSize, float r) {
+    float2 q = abs(p) - (halfSize - float2(r));
+    return length(max(q, float2(0.0))) + min(max(q.x, q.y), 0.0) - r;
+}
+
+half4 main(float2 coord) {
+    float2 halfSize = size * 0.5;
+    float2 p = coord - halfSize;
+    float depth = -sdRoundRect(p, halfSize, radius);
+    if (depth < 0.0) {
+        return half4(0.0);
+    }
+    float2 n = normalize(float2(
+        sdRoundRect(p + float2(1.0, 0.0), halfSize, radius) - sdRoundRect(p - float2(1.0, 0.0), halfSize, radius),
+        sdRoundRect(p + float2(0.0, 1.0), halfSize, radius) - sdRoundRect(p - float2(0.0, 1.0), halfSize, radius)));
+    float facing = dot(n, light);
+    float band = exp(-depth / rim);
+    float key = band * pow(max(facing, 0.0), 1.4);
+    float fill = band * pow(max(-facing, 0.0), 2.0) * 0.45;
+    float glow = exp(-depth / (rim * 7.0)) * max(facing, 0.0) * 0.30;
+    float touchGlow = 0.0;
+    if (touchAmount > 0.0) {
+        float d = distance(coord, touch) / max(touchRadius, 1.0);
+        float spread = exp(-d * d);
+        touchGlow = touchAmount * spread * (0.42 + 1.1 * band);
+    }
+    float rimLight = (key + fill + glow) * intensity;
+    float hi = clamp(rimLight + touchGlow, 0.0, 1.0);
+    float sh = band * pow(max(-facing, 0.0), 1.6) * shadeAmount;
+    float a = clamp(hi + sh, 0.0, 1.0);
+    if (a <= 0.0) {
+        return half4(0.0);
+    }
+    half3 lightColor = mix(tint, touchTint, half(touchGlow / (rimLight + touchGlow + 1.0e-4)));
+    half3 color = mix(shadeColor, lightColor, half(hi / (hi + sh + 1.0e-4)));
+    return half4(color * half(a), half(a));
 }
 """
 
@@ -135,19 +221,29 @@ private class EffectCache {
     private var key: List<Float>? = null
     private var effect: androidx.compose.ui.graphics.RenderEffect? = null
 
-    fun get(w: Float, h: Float, corner: Float, sigma: Float, strength: Float, bezel: Float, saturation: Float): androidx.compose.ui.graphics.RenderEffect {
-        val k = listOf(w, h, corner, sigma, strength, bezel, saturation)
+    /** One shader per tile; only its numbers change, so animating the lens never recompiles anything. */
+    private var shader: Any? = null
+
+    fun get(
+        w: Float, h: Float, corner: Float, sigma: Float, thickness: Float, bezel: Float, amount: Float, saturation: Float,
+        origin: Offset, gridStep: Float, grid: Color,
+    ): androidx.compose.ui.graphics.RenderEffect {
+        val k = listOf(w, h, corner, sigma, thickness, bezel, amount, saturation, origin.x, origin.y, gridStep, grid.red, grid.green, grid.blue, grid.alpha)
         val cached = effect
         if (cached != null && k == key) return cached
         val blur = RenderEffect.createBlurEffect(sigma, sigma, Shader.TileMode.MIRROR)
         val refracted = if (Build.VERSION.SDK_INT >= 33) {
-            val shader = RuntimeShader(RefractionAgsl)
-            shader.setFloatUniform("size", w, h)
-            shader.setFloatUniform("radius", corner)
-            shader.setFloatUniform("bezel", bezel)
-            shader.setFloatUniform("strength", strength)
-            shader.setFloatUniform("dispersion", strength * 0.14f)
-            RenderEffect.createChainEffect(RenderEffect.createRuntimeShaderEffect(shader, "content"), blur)
+            val s = (shader as? RuntimeShader) ?: RuntimeShader(RefractionAgsl).also { shader = it }
+            s.setFloatUniform("size", w, h)
+            s.setFloatUniform("radius", corner)
+            s.setFloatUniform("bezel", bezel)
+            s.setFloatUniform("thickness", thickness)
+            s.setFloatUniform("amount", amount)
+            s.setFloatUniform("dispersion", 0.16f)
+            s.setFloatUniform("origin", origin.x, origin.y)
+            s.setFloatUniform("gridStep", gridStep)
+            s.setFloatUniform("gridColor", grid.red, grid.green, grid.blue, grid.alpha)
+            RenderEffect.createChainEffect(RenderEffect.createRuntimeShaderEffect(s, "content"), blur)
         } else {
             blur
         }
@@ -158,6 +254,32 @@ private class EffectCache {
         key = k
         effect = built
         return built
+    }
+}
+
+/** The light-on-glass shader of one tile, set up for the current frame. Null before Android 13. */
+private class SpecularCache {
+    private var shader: Any? = null
+
+    fun brush(
+        w: Float, h: Float, corner: Float, light: Offset, rim: Float, intensity: Float, shadeAmount: Float,
+        tint: Color, touchTint: Color, shade: Color, touch: Offset, touchRadius: Float, touchAmount: Float,
+    ): Brush? {
+        if (Build.VERSION.SDK_INT < 33) return null
+        val s = (shader as? RuntimeShader) ?: RuntimeShader(SpecularAgsl).also { shader = it }
+        s.setFloatUniform("size", w, h)
+        s.setFloatUniform("radius", corner)
+        s.setFloatUniform("light", light.x, light.y)
+        s.setFloatUniform("rim", rim)
+        s.setFloatUniform("intensity", intensity)
+        s.setFloatUniform("shadeAmount", shadeAmount)
+        s.setFloatUniform("tint", tint.red, tint.green, tint.blue)
+        s.setFloatUniform("touchTint", touchTint.red, touchTint.green, touchTint.blue)
+        s.setFloatUniform("shadeColor", shade.red, shade.green, shade.blue)
+        s.setFloatUniform("touch", touch.x, touch.y)
+        s.setFloatUniform("touchRadius", touchRadius)
+        s.setFloatUniform("touchAmount", touchAmount)
+        return ShaderBrush(s)
     }
 }
 
@@ -223,47 +345,119 @@ private fun DrawScope.insetShadow(canvas: Canvas, layer: ShadowLayer, rr: RoundR
 }
 
 /**
- * A frosted, softly moulded tile: translucent fill, 145 degree sheen, 1px rim, three-layer inset bevel, and
- * (for floating tiles) backdrop blur with saturate. Reduce transparency and high contrast swap the fill for a
- * solid surface and drop the blur and sheen.
+ * Liquid glass, after the material Apple introduced with iOS 26. A tile is: a lens that bends the backdrop at its
+ * rim (see [RefractionAgsl]), a translucent fill, light on its edges that comes from a source in the world and moves
+ * with the phone's tilt ([LocalGlassLight]) and picks up the colour of the background light behind it, a three-layer
+ * inset bevel, and a drop shadow. Touching an [interactive] tile lights it from within, from the fingertip outward.
  *
- * [blurred] only does something for tiles that float over scrolling content and when a [LocalBackdrop] exists.
- * Rows and cards sit on the glowing backdrop, where blur would change nothing you could see.
+ * Two kinds, as in Apple's system: [blurred] is the regular, adaptive glass that floats over scrolling content (tab bar,
+ * toast, sheets), which softens what passes under it; the default is the clearer glass of rows and cards, which keeps
+ * the grid legible through it. Reduce transparency and high contrast swap all of it for a solid surface. Motion Off
+ * fixes the light and drops the spreading touch glow; Subtle turns the light down.
+ *
+ * [materialize] runs 0 to 1 for glass that appears or disappears: instead of fading, the lens and the light ramp, which
+ * is how Apple's glass comes and goes.
  */
 @Composable
 fun Modifier.glass(
     shape: Shape = RoundedCornerShape(Radius.card),
     raised: Boolean = false,
     blurred: Boolean = false,
+    interactive: Boolean = false,
+    materialize: () -> Float = { 1f },
+    /** A colour poured into the glass, as Apple tints a primary action: it stays glass, it is not a solid fill. */
+    tint: Color = Color.Unspecified,
 ): Modifier {
     val colors = Cadence.colors
+    val motion = Cadence.motion
     val density = LocalDensity.current
     // Floating tiles (tab bar, toast, sheet) refract the whole screen behind them; rows and cards refract only the
     // scenery of their own screen, never other rows.
     val floating = LocalBackdrop.current
     val scenery = LocalScenery.current
+    val lightSource = LocalGlassLight.current
+    val aurora = LocalAurora.current
+    val window = LocalWindowInfo.current
     val backdrop = if (colors.solidSurfaces) null else if (blurred) floating else scenery
     val tileLayer = rememberGraphicsLayer()
     var coordinates by remember { mutableStateOf<LayoutCoordinates?>(null) }
     var position by remember { mutableStateOf(Offset.Zero) }
     val cache = remember { EffectCache() }
+    val specular = remember { SpecularCache() }
+    val touch = LocalGlassTouch.current
     val fill = if (raised) colors.glassRaised else colors.glass
     val bevel = if (raised) colors.shadows.float else colors.shadows.glass
     val sheen = colors.glassSheen
     val edge = colors.glassEdge
     val solid = colors.solidSurfaces
+    val glow1 = colors.glow1
+    val glow2 = colors.glow2
+    val glow3 = colors.glow3
+    val dark = colors.isDark
+    // The lens redraws the screen grid in a stronger ink so its bending can be seen.
+    val gridInk = colors.gridLine.let { it.copy(alpha = (it.alpha * 5f).coerceIn(0.12f, 0.5f)) }
+    val reduceMotion = motion.off
+    val lightScale = 0.7f + 0.3f * motion.m.coerceAtMost(1f)
 
     return this
         .onGloballyPositioned {
             coordinates = it
             position = it.positionInRoot()
         }
+        .then(
+            if (interactive && !solid && touch != null) {
+                // Watches every touch without taking it, so the tile's own tap handling is untouched. A press that
+                // turns into a scroll lets go of the light quickly; a tap lets it fade.
+                Modifier.pointerInput(reduceMotion, touch) {
+                    awaitPointerEventScope {
+                        while (true) {
+                            val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+                            touch.press((coordinates?.positionInRoot() ?: Offset.Zero) + down.position, reduceMotion)
+                            var moved = false
+                            while (true) {
+                                val event = awaitPointerEvent(PointerEventPass.Initial)
+                                val change = event.changes.firstOrNull { it.id == down.id } ?: break
+                                if (!change.pressed) break
+                                if ((change.position - down.position).getDistance() > viewConfiguration.touchSlop) {
+                                    moved = true
+                                    break
+                                }
+                            }
+                            touch.release(moved)
+                        }
+                    }
+                }
+            } else {
+                Modifier
+            },
+        )
         .drawWithContent {
             val outline = shape.createOutline(size, layoutDirection, this)
             val rr = outline.toRoundRect(size)
             val shapePath = outline.toPath(size)
+            val appear = materialize().coerceIn(0f, 1f)
+            val minSide = minOf(size.width, size.height)
+            val corner = minOf(rr.topLeftCornerRadius.x, minSide / 2f)
+            // Bigger glass is a thicker slab: more lensing and softer light.
+            val boost = GlassLightMath.sizeBoost(minSide, density.density)
 
-            drawIntoCanvas { canvas -> bevel.filter { !it.inset }.forEach { dropShadow(canvas, it, rr, shapePath) } }
+            // Light from the background light behind this tile: it tints the glass edge light and bleeds into the shadow.
+            val spill = if (solid || appear <= 0f) null else aurora?.let {
+                val screen = window.containerSize
+                if (screen.width > 0) {
+                    val centre = position + Offset(size.width / 2f, size.height / 2f)
+                    Aurora.colorNear(it.lights(), centre.x / screen.width, centre.y / screen.height, screen.height.toFloat() / screen.width, glow1, glow2, glow3)
+                } else {
+                    null
+                }
+            }
+
+            drawIntoCanvas { canvas ->
+                bevel.filter { !it.inset }.forEach {
+                    val shadow = if (spill == null) it else ShadowLayer(false, it.x, it.y, it.blur, it.spread, lerp(it.color, spill, 0.16f).copy(alpha = it.color.alpha))
+                    dropShadow(canvas, shadow, rr, shapePath)
+                }
+            }
 
             clipPath(shapePath) {
                 if (backdrop != null) {
@@ -274,17 +468,21 @@ fun Modifier.glass(
                     val self = coordinates
                     if (source != null && source.isAttached && self != null && self.isAttached) {
                         val relative = self.positionInRoot() - source.positionInRoot()
-                        val minSide = minOf(size.width, size.height)
-                        val bezel = minOf((if (blurred) 20f else 16f).dp.toPx(), minSide * 0.45f)
+                        val bezel = minOf((if (blurred) 28f else 24f).dp.toPx() * (0.8f + 0.2f * boost), minSide * 0.45f)
                         tileLayer.renderEffect = cache.get(
                             w = size.width,
                             h = size.height,
-                            corner = minOf(rr.topLeftCornerRadius.x, minSide / 2f),
+                            corner = corner,
                             // Clear glass keeps the grid legible through rows; floating bars soften what scrolls under them.
-                            sigma = (if (blurred) 10f else 2.5f).dp.toPx(),
-                            strength = (if (blurred) 13f else 10f).dp.toPx(),
+                            sigma = (if (blurred) 8f else 1.2f).dp.toPx(),
+                            thickness = (if (blurred) 46f else 36f).dp.toPx() * boost,
                             bezel = bezel,
+                            // Quantised so a materialising tile makes a handful of lenses, not one per frame.
+                            amount = (appear * 24f).roundToInt() / 24f,
                             saturation = if (raised) 1.5f else 1.4f,
+                            origin = Offset(relative.x.roundToInt().toFloat(), relative.y.roundToInt().toFloat()),
+                            gridStep = 32.dp.toPx(),
+                            grid = gridInk,
                         )
                         tileLayer.record(this, layoutDirection, IntSize(size.width.roundToInt(), size.height.roundToInt())) {
                             translate(-relative.x, -relative.y) { drawLayer(backdrop.layer) }
@@ -293,6 +491,7 @@ fun Modifier.glass(
                     }
                 }
                 drawRect(fill)
+                if (tint != Color.Unspecified) drawRect(tint)
                 if (!solid) {
                     val angle = Math.toRadians(145.0)
                     val dir = Offset(Math.sin(angle).toFloat(), -Math.cos(angle).toFloat())
@@ -309,6 +508,28 @@ fun Modifier.glass(
                     )
                 }
                 drawIntoCanvas { canvas -> bevel.filter { it.inset }.forEach { insetShadow(canvas, it, rr) } }
+                if (!solid && appear > 0f) {
+                    // The light: key and fill rims from the world light, tinted by the background light behind this tile.
+                    val tint = lerp(Color.White, spill ?: Color.White, 0.38f)
+                    val brush = specular.brush(
+                        w = size.width,
+                        h = size.height,
+                        corner = corner,
+                        // As glass materialises the light travels around its silhouette, settling where the world light is.
+                        light = GlassLightMath.rotate(lightSource.direction, (1f - appear) * 2.6f),
+                        rim = 1.5.dp.toPx() * boost,
+                        intensity = (if (dark) 0.62f else 0.95f) * lightScale * appear,
+                        shadeAmount = (if (dark) 0.34f else 0.20f) * appear,
+                        tint = tint,
+                        // On a pale tile white light is invisible, so a touch there lights it in the colour of the light behind it.
+                        touchTint = if (dark) Color.White else lerp(Color.White, spill ?: Color(0xFF9CC9A8), 0.85f),
+                        shade = if (dark) Color.Black else Color(0xFF1F293D),
+                        touch = if (touch == null) Offset.Zero else touch.point - position,
+                        touchRadius = 240.dp.toPx() * (0.22f + 0.78f * (touch?.spread?.value ?: 0f)),
+                        touchAmount = (touch?.glow?.value ?: 0f) * (if (dark) 0.42f else 0.55f) * lightScale,
+                    )
+                    if (brush != null) drawRect(brush)
+                }
                 this@drawWithContent.drawContent()
             }
             // The 1px rim sits inside the edge: stroke 2px centred on it and keep the inner half.

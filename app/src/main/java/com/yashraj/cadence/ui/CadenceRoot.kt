@@ -18,6 +18,8 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
@@ -49,6 +51,10 @@ import com.yashraj.cadence.ui.components.CTabBar
 import com.yashraj.cadence.ui.components.CToast
 import com.yashraj.cadence.ui.components.Haptics
 import com.yashraj.cadence.ui.components.LocalAurora
+import com.yashraj.cadence.ui.components.GlassTouch
+import com.yashraj.cadence.ui.components.LocalGlassLight
+import com.yashraj.cadence.ui.components.LocalGlassTouch
+import com.yashraj.cadence.ui.components.rememberGlassLight
 import com.yashraj.cadence.ui.components.LocalBackdrop
 import com.yashraj.cadence.ui.components.LocalHaptics
 import com.yashraj.cadence.ui.components.TabId
@@ -123,6 +129,8 @@ private fun CadenceContent(vm: AppViewModel) {
     val nav = remember { NavState() }
     // The background light: random for each launch, and it eases to a new arrangement on every page change.
     val aurora = remember { AuroraState() }
+    // The light on the glass edges follows the phone's tilt, unless Motion is Off or surfaces are solid.
+    val glassLight = rememberGlassLight(enabled = !motion.off && !colors.solidSurfaces)
     val auroraSpec = motion.fade<Float>(900, Ease.easeInOut)
     val pagesSeen = remember { intArrayOf(0) }
     androidx.compose.runtime.LaunchedEffect(nav.current) {
@@ -137,6 +145,7 @@ private fun CadenceContent(vm: AppViewModel) {
     val windowCapture = rememberBackdropState()
     var walkStep by remember { mutableStateOf<Int?>(null) }
     val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val glassTouch = remember { GlassTouch(scope) }
 
     // First run, and "Show the walkthrough" in Settings (which marks it unseen again): start from Today.
     val walkthroughSeen = settings?.walkthroughSeen ?: true
@@ -200,7 +209,7 @@ private fun CadenceContent(vm: AppViewModel) {
     val openSheet: (SheetTarget) -> Unit = { sheet = it }
     val tags = (tasks?.mapNotNull { it.tag } ?: emptyList()).distinct().sorted()
 
-    CompositionLocalProvider(LocalHaptics provides haptics, LocalBackdrop provides backdrop, LocalWalkTargets provides walkTargets, LocalAurora provides aurora) {
+    CompositionLocalProvider(LocalHaptics provides haptics, LocalBackdrop provides backdrop, LocalWalkTargets provides walkTargets, LocalAurora provides aurora, LocalGlassLight provides glassLight, LocalGlassTouch provides glassTouch) {
       Box(Modifier.fillMaxSize()) {
         Box(Modifier.fillMaxSize().background(colors.backdrop).windowCapture(windowCapture) { walkStep != null }) {
             Box(Modifier.fillMaxSize().backdropSource(backdrop)) {
@@ -257,6 +266,28 @@ private fun CadenceContent(vm: AppViewModel) {
                         is Route.NoteEditor -> NoteEditorScreen(vm, route.id, onBack = nav::pop)
                     }
                 }
+            }
+
+            // Scroll edge effect: content dissolves into the ground beneath the floating tab bar, which lifts the glass above
+            // it and keeps the bar legible. Dark or light, it is the ground colour, so over dark content it simply dims.
+            AnimatedVisibility(
+                visible = nav.tab != null,
+                modifier = Modifier.align(Alignment.BottomCenter),
+                enter = fadeIn(motion.fade(Dur.base)),
+                exit = fadeOut(motion.fade(Dur.quick)),
+            ) {
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(170.dp)
+                        .background(
+                            androidx.compose.ui.graphics.Brush.verticalGradient(
+                                0f to Color.Transparent,
+                                0.55f to colors.backdrop.copy(alpha = 0.55f),
+                                1f to colors.backdrop.copy(alpha = 0.94f),
+                            ),
+                        ),
+                )
             }
 
             // Floating layers: the tab bar, the Undo toast, then the Quick add sheet above them.

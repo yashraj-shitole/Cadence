@@ -54,6 +54,30 @@ object Aurora {
     fun colorAt(hue: Float, glow1: Color, glow2: Color, glow3: Color): Color =
         if (hue <= 1f) lerpColor(glow1, glow2, hue.coerceIn(0f, 1f)) else lerpColor(glow2, glow3, (hue - 1f).coerceIn(0f, 1f))
 
+    /**
+     * The background light that reaches the point ([x], [y]) (screen fractions; [aspect] is height over width), or null
+     * where there is none. Glass uses it to pick up a little of the colour behind it, the way light from nearby content
+     * spills onto Liquid Glass.
+     */
+    fun colorNear(lights: List<Light>, x: Float, y: Float, aspect: Float, glow1: Color, glow2: Color, glow3: Color): Color? {
+        var r = 0f
+        var g = 0f
+        var b = 0f
+        var total = 0f
+        for (l in lights) {
+            val dx = x - l.x
+            val dy = (y - l.y) * aspect
+            val reach = l.radius * 0.9f
+            val weight = l.strength * kotlin.math.exp(-(dx * dx + dy * dy) / (reach * reach))
+            val c = colorAt(l.hue, glow1, glow2, glow3)
+            r += c.red * weight
+            g += c.green * weight
+            b += c.blue * weight
+            total += weight
+        }
+        return if (total < 1e-3f) null else Color(r / total, g / total, b / total)
+    }
+
     private fun Random.range(lo: Float, hi: Float) = lo + nextFloat() * (hi - lo)
     private fun Random.range(r: Pair<Float, Float>) = range(r.first, r.second)
 }

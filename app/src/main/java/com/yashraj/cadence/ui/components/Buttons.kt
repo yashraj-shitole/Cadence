@@ -65,7 +65,12 @@ fun CButton(
     )
     if (kind == ButtonKind.Primary) m = m.accentGlow(colors.accentShadow, shape)
     m = when (kind) {
-        ButtonKind.Primary -> m.background(if (enabled) colors.accent else colors.accent.copy(alpha = 0.4f), shape)
+        // Tinted glass, not a solid fill: still lensed and lit, with enough tint to keep the label at full contrast.
+        ButtonKind.Primary -> m.glass(
+            shape,
+            interactive = true,
+            tint = colors.accent.copy(alpha = (if (colors.solidSurfaces) 1f else 0.84f) * (if (enabled) 1f else 0.4f)),
+        )
         ButtonKind.Glass -> m.background(colors.glassRaised, shape).border(1.dp, colors.glassEdge, shape)
         else -> m
     }
@@ -104,7 +109,7 @@ fun CIconButton(
                 focusShape = CircleShape,
             )
             .size(Sizes.tapMin)
-            .then(if (glass) Modifier.glass(CircleShape) else Modifier)
+            .then(if (glass) Modifier.glass(CircleShape, interactive = true) else Modifier)
             .semantics { contentDescription = label },
         contentAlignment = Alignment.Center,
     ) {

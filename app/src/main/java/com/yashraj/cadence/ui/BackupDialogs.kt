@@ -57,7 +57,7 @@ private fun CadenceDialogCard(title: String, body: String, onDismiss: () -> Unit
                 }
                 // A dialog is its own window, so nothing behind it is blurred: give the glass an opaque base so the screen below cannot show through the text.
                 .background(colors.surfaceSolidRaised, RoundedCornerShape(Radius.sheet))
-                .glass(RoundedCornerShape(Radius.sheet), raised = true)
+                .glass(RoundedCornerShape(Radius.sheet), raised = true, materialize = { appear.value })
                 .padding(Space.s6),
             verticalArrangement = Arrangement.spacedBy(Space.s4),
         ) {

@@ -91,7 +91,7 @@ fun HabitRow(
         modifier
             .fillMaxWidth()
             .tappable(onOpen, onClickLabel = "Open ${habit.title}", focusShape = RowShape)
-            .glass(RowShape)
+            .glass(RowShape, interactive = true)
             .heightIn(min = 72.dp)
             .padding(horizontal = Space.s4, vertical = Space.s3),
         horizontalArrangement = Arrangement.spacedBy(Space.s4),
@@ -140,7 +140,7 @@ fun TaskRow(
         modifier
             .fillMaxWidth()
             .tappable(onOpen, onClickLabel = "Edit ${task.title}", focusShape = RowShape)
-            .glass(RowShape)
+            .glass(RowShape, interactive = true)
             .heightIn(min = 72.dp)
             .padding(horizontal = Space.s4, vertical = Space.s3),
         horizontalArrangement = Arrangement.spacedBy(Space.s4),
@@ -189,7 +189,7 @@ fun NoteCard(note: NoteEntity, today: Long, onOpen: () -> Unit, modifier: Modifi
         modifier
             .fillMaxWidth()
             .tappable(onOpen, onClickLabel = "Open ${note.title.ifBlank { "note" }}", focusShape = RowShape)
-            .glass(RowShape)
+            .glass(RowShape, interactive = true)
             .padding(Space.s4),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {

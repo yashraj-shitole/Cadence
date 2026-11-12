@@ -400,7 +400,7 @@ private fun EraseDialog(onCancel: () -> Unit, onErase: () -> Unit) {
                     scaleX = scale
                     scaleY = scale
                 }
-                .glass(RoundedCornerShape(Radius.sheet), raised = true)
+                .glass(RoundedCornerShape(Radius.sheet), raised = true, materialize = { appear.value })
                 .padding(Space.s6),
             verticalArrangement = Arrangement.spacedBy(Space.s4),
         ) {
