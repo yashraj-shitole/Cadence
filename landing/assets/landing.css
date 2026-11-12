@@ -47,9 +47,8 @@ i[data-icon] { display: inline-grid; place-items: center; font-style: normal; }
 .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 40; padding: 12px clamp(12px, 3vw, 28px) 0; pointer-events: none; }
 .nav__bar { pointer-events: auto; width: min(1180px, 100%); margin: 0 auto; height: 60px; padding: 0 8px 0 18px; display: flex; align-items: center; gap: 12px; border-radius: var(--radius-pill); }
 .logo { display: inline-flex; align-items: center; gap: 10px; font: 700 20px/24px var(--font-display); letter-spacing: -.01em; min-height: var(--tap-min); }
-.logo__mark { display: inline-flex; gap: 3px; align-items: center; }
-.logo__mark i { width: 12px; height: 8px; border-radius: var(--radius-pill); background: var(--accent); }
-.logo__mark i:last-child { background: var(--track); }
+.logo__mark { width: 32px; height: 32px; flex: none; display: block; }
+html[data-theme="dark"] .logo__mark, html[data-theme="hc-dark"] .logo__mark { border-radius: 7.5px; box-shadow: 0 0 0 1px rgba(242, 239, 233, .16); }
 .nav__links { display: flex; gap: 2px; margin-inline: auto; }
 .nav__links a { padding: 0 14px; height: 40px; display: grid; place-items: center; border-radius: var(--radius-pill); font: 600 14px/20px var(--font-text); color: var(--ink-muted);
   transition: color var(--duration-quick) var(--ease-out), background-color var(--duration-quick) var(--ease-out); }
