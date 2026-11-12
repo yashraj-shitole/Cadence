@@ -811,8 +811,8 @@
 
   /* ================= get ================= */
   const storeUrl = ($('#page').dataset.storeUrl || '').trim();
-  // A direct link to the installer: the browser starts the download and the page stays put.
-  if (storeUrl) $$('[data-get], #storeBtn').forEach((a) => { a.href = storeUrl; a.setAttribute('download', 'Cadence.apk'); });
+  // The buttons open the latest release page in a new tab.
+  if (storeUrl) $$('[data-get], #storeBtn').forEach((a) => { a.href = storeUrl; a.target = '_blank'; a.rel = 'noopener'; });
   // Version and size of what the button will download, read once from GitHub's public release data. Silent if it fails.
   try {
     fetch('https://api.github.com/repos/yashraj-shitole/Cadence/releases/latest', { headers: { Accept: 'application/vnd.github+json' } })
