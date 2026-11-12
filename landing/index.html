@@ -13,6 +13,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Geist:wght@400..700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/cadence.css">
 <link rel="stylesheet" href="assets/landing.css">
+<link rel="stylesheet" href="assets/liquid.css">
 <script>
 /* Apply saved look before first paint so the page never flashes the wrong theme. */
 (function () {
@@ -28,7 +29,7 @@
 </head>
 <body>
 <!-- Every "Download" button is a direct link to Cadence.apk on the latest GitHub release (data-store-url): it starts the download. -->
-<div class="bg" aria-hidden="true"><i class="bg__glow bg__glow--1"></i><i class="bg__glow bg__glow--3"></i><i class="bg__glow bg__glow--2"></i></div>
+<div class="bg" aria-hidden="true"><i class="bg__light"></i><i class="bg__light"></i><i class="bg__light"></i><i class="bg__light"></i></div>
 <canvas id="gl" aria-hidden="true"></canvas>
 
 <div class="cd-stage page" id="page" data-store-url="https://github.com/yashraj-shitole/Cadence/releases/latest/download/Cadence.apk">
@@ -378,5 +379,6 @@
 </div>
 
 <script src="assets/app.js" defer></script>
+<script src="assets/lens.js" defer></script>
 </body>
 </html>

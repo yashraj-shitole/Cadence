@@ -1,0 +1,123 @@
+/* Liquid glass, as in the app: edges lit by a light that follows the pointer or the tilt of the phone, glass lenses for the
+   moving part of every control, tinted glass for the primary action, and a background of four soft lights that drift to a
+   new arrangement as you move through the page. Loaded after landing.css. */
+
+:root {
+  /* Unit vector pointing toward the light (x right, y down); app.js moves it. */
+  --lx: -0.55;
+  --ly: -0.83;
+  --rim-a: 0.85;      /* bright rim on the lit side */
+  --rim-d: 0.14;      /* shade rim on the far side */
+  --glow-a: 0.30;     /* soft glow inside the lit side */
+}
+[data-theme="dark"] { --rim-a: 0.34; --rim-d: 0.38; --glow-a: 0.10; }
+
+/* ---------- glass surfaces ---------- */
+.cd-stage .cd-glass {
+  box-shadow:
+    inset calc(var(--lx) * -1.5px) calc(var(--ly) * -1.5px) 0 0 rgba(255, 255, 255, var(--rim-a)),
+    inset calc(var(--lx) * 1.5px) calc(var(--ly) * 1.5px) 0 0 rgba(20, 24, 31, var(--rim-d)),
+    inset calc(var(--lx) * -14px) calc(var(--ly) * -14px) 22px -14px rgba(255, 255, 255, var(--glow-a)),
+    var(--shadow-glass);
+  -webkit-backdrop-filter: blur(calc(var(--blur-glass) * .6)) saturate(190%);
+  backdrop-filter: blur(calc(var(--blur-glass) * .6)) saturate(190%);
+}
+.cd-stage .cd-glass--raised {
+  box-shadow:
+    inset calc(var(--lx) * -1.5px) calc(var(--ly) * -1.5px) 0 0 rgba(255, 255, 255, var(--rim-a)),
+    inset calc(var(--lx) * 1.5px) calc(var(--ly) * 1.5px) 0 0 rgba(20, 24, 31, var(--rim-d)),
+    inset calc(var(--lx) * -18px) calc(var(--ly) * -18px) 26px -16px rgba(255, 255, 255, var(--glow-a)),
+    var(--shadow-float);
+}
+[data-glass="solid"] .cd-stage .cd-glass, [data-theme^="hc"] .cd-stage .cd-glass,
+[data-glass="solid"] .cd-glass, [data-theme^="hc"] .cd-glass { box-shadow: var(--shadow-glass); }
+
+/* ---------- tinted glass for the primary action ---------- */
+.cd-stage .cd-btn--primary {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .30), rgba(255, 255, 255, 0) 56%),
+    color-mix(in srgb, var(--accent) 90%, transparent);
+  -webkit-backdrop-filter: blur(6px) saturate(1.6);
+  backdrop-filter: blur(6px) saturate(1.6);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5), inset 0 -8px 12px -8px rgba(0, 0, 0, .25), var(--shadow-accent);
+}
+[data-glass="solid"] .cd-stage .cd-btn--primary, [data-theme^="hc"] .cd-stage .cd-btn--primary { background: var(--accent); box-shadow: var(--shadow-accent); backdrop-filter: none; -webkit-backdrop-filter: none; }
+
+/* ---------- controls: the moving part is a glass lens over its track ---------- */
+.cd-stage .cd-toggle::after {
+  top: 4px; left: 4px; width: 30px; height: 24px; border-radius: 12px;
+  background: rgba(255, 255, 255, .55);
+  -webkit-backdrop-filter: blur(1px) saturate(1.9); backdrop-filter: blur(1px) saturate(1.9);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .85), inset 0 -7px 10px -7px rgba(20, 24, 31, .28), inset 0 0 0 1px rgba(255, 255, 255, .35), 0 1px 4px rgba(20, 24, 31, .3);
+  transition: transform calc(var(--duration-base) * min(var(--m), 1)) var(--settle), width var(--duration-base) var(--ease-out), background-color var(--duration-quick) var(--ease-out);
+}
+.cd-stage .cd-toggle[aria-checked="true"]::after { transform: translateX(15px); background: rgba(255, 255, 255, .62); }
+.cd-stage .cd-toggle:active::after { width: 36px; background: rgba(255, 255, 255, .16); }
+.cd-stage .cd-toggle[aria-checked="true"]:active::after { transform: translateX(9px); }
+[data-theme="dark"] .cd-stage .cd-toggle::after { background: rgba(255, 255, 255, .34); }
+[data-theme="dark"] .cd-stage .cd-toggle[aria-checked="true"]::after { background: rgba(255, 255, 255, .5); }
+[data-glass="solid"] .cd-stage .cd-toggle::after, [data-theme^="hc"] .cd-stage .cd-toggle::after { background: var(--control-edge); -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: none; }
+[data-glass="solid"] .cd-stage .cd-toggle[aria-checked="true"]::after, [data-theme^="hc"] .cd-stage .cd-toggle[aria-checked="true"]::after { background: var(--on-accent); box-shadow: var(--shadow-thumb); }
+
+.cd-stage .cd-seg__thumb {
+  background: rgba(255, 255, 255, .5);
+  -webkit-backdrop-filter: blur(2px) saturate(1.9); backdrop-filter: blur(2px) saturate(1.9);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .85), inset 0 -10px 14px -10px rgba(20, 24, 31, .26), inset 0 0 0 1px rgba(255, 255, 255, .35), 0 2px 6px rgba(20, 24, 31, .22);
+}
+.cd-stage .cd-seg:active .cd-seg__thumb { background: rgba(255, 255, 255, .16); }
+[data-theme="dark"] .cd-stage .cd-seg__thumb { background: rgba(255, 255, 255, .28); }
+[data-glass="solid"] .cd-stage .cd-seg__thumb, [data-theme^="hc"] .cd-stage .cd-seg__thumb { background: var(--surface-solid-raised); -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: var(--shadow-thumb); }
+
+.cd-stage .cd-level__thumb {
+  background: rgba(255, 255, 255, .5); border: 0;
+  -webkit-backdrop-filter: blur(1px) saturate(1.9); backdrop-filter: blur(1px) saturate(1.9);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .85), inset 0 -8px 12px -8px rgba(20, 24, 31, .28), inset 0 0 0 1px rgba(255, 255, 255, .4), 0 1px 5px rgba(20, 24, 31, .3);
+}
+.cd-stage .cd-level:active .cd-level__thumb { background: rgba(255, 255, 255, .16); transform: scale(1.08); }
+[data-theme="dark"] .cd-stage .cd-level__thumb { background: rgba(255, 255, 255, .34); }
+[data-glass="solid"] .cd-stage .cd-level__thumb, [data-theme^="hc"] .cd-stage .cd-level__thumb { background: var(--surface-solid-raised); border: 2px solid var(--accent); -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: var(--shadow-thumb); }
+
+/* ---------- the selected tab is a glass capsule ---------- */
+.cd-stage .cd-tab[aria-current="page"], .mtab .cd-tab.is-on {
+  background: linear-gradient(180deg, rgba(255, 255, 255, .30), rgba(255, 255, 255, .06));
+  border-radius: var(--radius-pill);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .6), inset 0 0 0 1px var(--glass-edge);
+}
+
+/* ---------- background: four soft lights that drift to a new arrangement as the section changes ---------- */
+.bg__light {
+  position: absolute; left: calc(var(--x, .5) * 100vw); top: calc(var(--y, .5) * 100vh);
+  width: calc(var(--r, .8) * 90vmax); height: calc(var(--r, .8) * 90vmax);
+  transform: translate(-50%, -50%); border-radius: 50%;
+  --lc: color-mix(in srgb, color-mix(in srgb, var(--glow-1) calc((1 - min(var(--h, 0), 1)) * 100%), var(--glow-2)) calc((1 - max(var(--h, 0) - 1, 0)) * 100%), var(--glow-3));
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--lc) 100%, transparent) 0%, color-mix(in srgb, var(--lc) 62%, transparent) 30%, color-mix(in srgb, var(--lc) 20%, transparent) 60%, transparent 100%);
+  opacity: calc(var(--a, .8) * .85); will-change: left, top, opacity;
+}
+[data-theme="dark"] .bg__light { opacity: calc(var(--a, .8) * .55); }
+[data-backdrop="soft"] .bg__light { opacity: calc(var(--a, .8) * .38); }
+[data-backdrop="plain"] .bg__light { display: none; }
+[data-perf="off"] .bg__light { display: none; }
+
+/* ---------- real refraction (assets/lens.js): the glass bends what is behind its rim, in Chromium ---------- */
+.cd-stage [data-lens] { -webkit-backdrop-filter: var(--lens) blur(calc(var(--blur-glass) * .35)) saturate(190%); backdrop-filter: var(--lens) blur(calc(var(--blur-glass) * .35)) saturate(190%); }
+
+/* ---------- clear glass, like the app: about half of the design fill, so the lens has something to bend ---------- */
+:root, [data-theme="light"] { --grid-line: rgba(20, 24, 31, 0.08); }
+[data-theme="dark"] { --grid-line: rgba(255, 255, 255, 0.07); }
+.cd-stage .cd-glass {
+  background: linear-gradient(145deg, color-mix(in srgb, var(--glass-sheen) 55%, transparent) 0%, transparent 45%), color-mix(in srgb, var(--glass) 45%, transparent);
+}
+.cd-stage .cd-glass--raised {
+  background: linear-gradient(145deg, color-mix(in srgb, var(--glass-sheen) 60%, transparent) 0%, transparent 45%), color-mix(in srgb, var(--glass-raised) 52%, transparent);
+}
+[data-glass="solid"] .cd-stage .cd-glass, [data-theme^="hc"] .cd-stage .cd-glass { background: var(--surface-solid); }
+[data-glass="solid"] .cd-stage .cd-glass--raised, [data-theme^="hc"] .cd-stage .cd-glass--raised { background: var(--surface-solid-raised); }
+@media (prefers-reduced-transparency: reduce) {
+  .cd-stage .cd-glass { background: var(--surface-solid); }
+  .cd-stage .cd-glass--raised { background: var(--surface-solid-raised); }
+}
+
+/* Glass on glass is avoided, as in the app: what sits on a glass card is a plain translucent fill, not a second glass. */
+.cd-stage .cd-glass .cd-glass { -webkit-backdrop-filter: none; backdrop-filter: none; background: color-mix(in srgb, var(--glass-raised) 78%, transparent); }
+[data-theme="dark"] .cd-stage .cd-glass .cd-glass { background: color-mix(in srgb, var(--glass-raised) 70%, transparent); }
+.cd-stage .cd-glass .cd-glass[data-lens] { -webkit-backdrop-filter: none; backdrop-filter: none; }

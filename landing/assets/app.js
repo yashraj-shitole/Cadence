@@ -516,9 +516,12 @@
         '<h2 class="cd-section">Appearance</h2><div class="cd-glass cd-group"><div class="cd-setting--stack"><div class="cd-setting__title">Colour palette</div><div class="cd-palettes" data-palettes></div></div>' +
         '<div class="cd-setting--stack"><div class="cd-setting__title">Theme</div><div class="cd-seg" data-seg="theme" data-n="3"><i class="cd-seg__thumb"></i><button type="button" data-v="light">Light</button><button type="button" data-v="dark">Dark</button><button type="button" data-v="system">System</button></div></div>' +
         '<div class="cd-setting--stack"><div class="cd-setting__title">Backdrop</div><div class="cd-seg" data-seg="backdrop" data-n="3"><i class="cd-seg__thumb"></i><button type="button" data-v="glow">Glow</button><button type="button" data-v="soft">Soft</button><button type="button" data-v="plain">Plain</button></div></div>' +
+        row('Background image', 'A photo from your phone behind everything', val('Choose')) +
         row('Reduce transparency', 'Solid surfaces instead of glass', tog('glass', 'Reduce transparency')) + row('High contrast', 'Stronger edges, no glow', tog('contrast', 'High contrast')) + '</div>' +
         '<h2 class="cd-section">Rhythm</h2><div class="cd-glass cd-group">' + row('Daily reminder', 'One nudge, nothing else', val('8:00 am')) + row('Weekend rest days', 'Sat and Sun keep every streak', tog('weekend', 'Weekend rest days')) + row('Week starts on', '', val('Monday')) + '</div>' +
+        '<h2 class="cd-section">Backup</h2><div class="cd-glass cd-group">' + row('Automatic backup', 'Saves to a folder you choose, so a reinstall can bring it back', tog('autobackup', 'Automatic backup')) + row('Back up now', 'Last backup: Today', val('')) + '</div>' +
         '<h2 class="cd-section">Data</h2><div class="cd-glass cd-group"><button class="cd-setting cd-press" data-export><div class="cd-setting__body"><div class="cd-setting__title">Export data</div></div>' + ci('download') + '</button><button class="cd-setting cd-press" data-erase><div class="cd-setting__body"><div class="cd-setting__title" style="color:var(--danger)">Erase all data</div><div class="cd-setting__sub">The only action that asks first</div></div></button></div></div>' +
+        '<h2 class="cd-section">About</h2><div class="cd-glass cd-group">' + row('Check for updates', 'You have the latest version', val('v1.1.1')) + '</div>' +
         '<div class="cd-screen__toast" data-toast style="bottom:24px"></div>';
       root.addEventListener('click', (e) => {
         if (e.target.closest('[data-export]')) { buzz('light'); ctx.toast('In the app, this saves a file to your phone'); }
@@ -580,7 +583,7 @@
     { id: 'notes', name: 'Notes', icon: 'notes', motif: 'notes', purpose: 'Find or start a note.', body: 'Pinned notes stay on top. Search and tags narrow the rest as you type. Try searching for "chai" in the phone.', flow: ['Search', 'Tags', 'Pinned', 'All notes'], action: 'Open a note', quote: 'Keep what matters where you can find it.', by: '' },
     { id: 'editor', name: 'Note editor', icon: 'edit', motif: 'notes', purpose: 'Write without chrome.', body: 'One steady tile for reading and writing, with checklist lines that tick off in place. Notes are plain Markdown underneath and save themselves.', flow: ['Title', 'Body', 'Checklist lines', 'Tags'], action: 'Typing. It saves itself', quote: 'Write it down so your mind can rest.', by: '' },
     { id: 'add', name: 'Quick add', icon: 'plus', motif: 'add', purpose: 'Capture in one tap.', body: 'The centre button opens one sheet with the keyboard up. Switch between task, habit and note. Type a title in the phone and add it: it lands in the right list.', flow: ['Type switch', 'Title', 'Optional chips', 'Add'], action: 'Add task, Add habit or Save note', quote: 'A title alone is a complete entry.', by: '' },
-    { id: 'settings', name: 'Settings', icon: 'sliders', motif: 'settings', purpose: 'Set rhythm, look and feel.', body: 'Every control applies at once, and here they apply to this whole page. Change the palette or the motion level in the phone and watch everything follow.', flow: ['Feel', 'Appearance', 'Rhythm', 'Data'], action: 'None. Every control applies at once', quote: 'Calm is a setting, and it is yours to set.', by: '' },
+    { id: 'settings', name: 'Settings', icon: 'sliders', motif: 'settings', purpose: 'Set rhythm, look and feel.', body: 'Every control applies at once, and here they apply to this whole page. Change the palette or the motion level in the phone and watch everything follow. Settings also holds your own background photo, automatic backups and update checks.', flow: ['Feel', 'Appearance', 'Rhythm', 'Backup', 'Data', 'About'], action: 'None. Every control applies at once', quote: 'Calm is a setting, and it is yours to set.', by: '' },
   ];
   let tourIdx = 0;
   const tabsEl = $('#tourTabs'), infoEl = $('#tourInfo');
@@ -733,14 +736,65 @@
     });
   }, { passive: true });
 
+  /* ================= flowing background + light on the glass ================= */
+  // Four soft lights, random on every visit, that ease to a new arrangement whenever the section changes. Nothing moves at rest.
+  const aurora = (function () {
+    const lights = $$('.bg__light');
+    if (!lights.length) return { advance() {} };
+    const rnd = (a, b) => a + Math.random() * (b - a), clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+    const bands = [[-0.05, 0.3], [0.22, 0.52], [0.48, 0.78], [0.68, 1.05]];
+    const make = (prev) => lights.map((_, i) => {
+      const p = prev && prev[i];
+      return { x: p ? clamp(p.x + rnd(-0.35, 0.35), -0.15, 1.15) : rnd(-0.15, 1.15), y: rnd(bands[i][0], bands[i][1]), r: rnd(0.55, 1), h: p ? clamp(p.h + rnd(-0.7, 0.7), 0, 2) : rnd(0, 2), a: rnd(0.55, 1) };
+    });
+    const write = (arr) => lights.forEach((el, i) => { const l = arr[i]; el.style.setProperty('--x', l.x.toFixed(3)); el.style.setProperty('--y', l.y.toFixed(3)); el.style.setProperty('--r', l.r.toFixed(3)); el.style.setProperty('--h', l.h.toFixed(3)); el.style.setProperty('--a', l.a.toFixed(3)); });
+    let cur = make(null), from = cur, to = cur, t0 = 0, dur = 900, raf = 0;
+    write(cur);
+    const ease = (k) => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
+    const frame = (now) => {
+      const k = Math.min(1, (now - t0) / dur), e = ease(k);
+      cur = from.map((f, i) => ({ x: f.x + (to[i].x - f.x) * e, y: f.y + (to[i].y - f.y) * e, r: f.r + (to[i].r - f.r) * e, h: f.h + (to[i].h - f.h) * e, a: f.a + (to[i].a - f.a) * e }));
+      write(cur);
+      if (k < 1) raf = requestAnimationFrame(frame);
+    };
+    return {
+      advance() {
+        from = cur; to = make(cur); t0 = performance.now();
+        dur = (!effM() || tier === 'off') ? 120 : 900;
+        cancelAnimationFrame(raf); raf = requestAnimationFrame(frame);
+      },
+    };
+  })();
+
+  // The light on every glass edge comes from the pointer, or from the tilt of the phone, and settles back to the upper left.
+  (function () {
+    const rootEl = document.documentElement;
+    let lx = -0.55, ly = -0.83, queued = false;
+    const apply = () => { queued = false; const n = Math.hypot(lx, ly) || 1; rootEl.style.setProperty('--lx', (lx / n).toFixed(3)); rootEl.style.setProperty('--ly', (ly / n).toFixed(3)); };
+    const set = (x, y) => { lx = x; ly = y; if (!queued) { queued = true; requestAnimationFrame(apply); } };
+    const live = () => tier !== 'off' && tier !== 'light' && effM() > 0;
+    window.addEventListener('pointermove', (e) => {
+      if (e.pointerType === 'touch' || !live()) return;
+      const dx = e.clientX / innerWidth - 0.5, dy = e.clientY / innerHeight - 0.5;
+      set(-0.55 + dx * 1.2, -0.83 + dy * 0.9);
+    }, { passive: true });
+    window.addEventListener('deviceorientation', (e) => {
+      if (!live() || e.gamma == null || e.beta == null) return;
+      set(-0.55 + clamp(e.gamma / 60, -1, 1) * 0.8, -0.83 + clamp((e.beta - 55) / 60, -1, 1) * 0.5);
+    }, { passive: true });
+    function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  })();
+
   /* ================= reveal, nav, sheet ================= */
   const rv = $$('.rv');
   if ('IntersectionObserver' in window) {
     const io = new IntersectionObserver((es) => es.forEach((en) => { if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); } }), { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
     rv.forEach((el) => io.observe(el));
     const links = $$('.nav__links a, .mtab .cd-tab');
+    let lastSection = null;
     const secIO = new IntersectionObserver((es) => es.forEach((en) => {
       if (!en.isIntersecting) return; const id = en.target.id;
+      if (id !== lastSection) { if (lastSection !== null) aurora.advance(); lastSection = id; }
       links.forEach((a) => a.classList.toggle('is-on', a.getAttribute('href') === '#' + id || (id === 'principles' && a.dataset.sec === 'top')));
     }), { rootMargin: '-45% 0px -50% 0px' });
     $$('main section[id]').forEach((s) => secIO.observe(s));
@@ -758,7 +812,7 @@
   /* ================= get ================= */
   const storeUrl = ($('#page').dataset.storeUrl || '').trim();
   // A direct link to the installer: the browser starts the download and the page stays put.
-  if (storeUrl) $('[data-get], #storeBtn').forEach((a) => { a.href = storeUrl; a.setAttribute('download', 'Cadence.apk'); });
+  if (storeUrl) $$('[data-get], #storeBtn').forEach((a) => { a.href = storeUrl; a.setAttribute('download', 'Cadence.apk'); });
   // Version and size of what the button will download, read once from GitHub's public release data. Silent if it fails.
   try {
     fetch('https://api.github.com/repos/yashraj-shitole/Cadence/releases/latest', { headers: { Accept: 'application/vnd.github+json' } })
@@ -767,7 +821,7 @@
         if (!rel || !rel.tag_name) return;
         const apk = (rel.assets || []).find((a) => a.name === 'Cadence.apk');
         const text = 'Version ' + String(rel.tag_name).replace(/^v/, '') + (apk ? ' · ' + (apk.size / 1048576).toFixed(1) + ' MB' : '');
-        $('[data-version]').forEach((el) => { el.textContent = text; el.hidden = false; });
+        $$('[data-version]').forEach((el) => { el.textContent = text; el.hidden = false; });
       })
       .catch(() => {});
   } catch (e) { /* offline or blocked: the button still works */ }
