@@ -16,4 +16,9 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent { CadenceRoot(viewModel) }
     }
+
+    override fun onStop() {
+        super.onStop()
+        viewModel.onStop()
+    }
 }

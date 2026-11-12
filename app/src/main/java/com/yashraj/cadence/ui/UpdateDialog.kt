@@ -1,6 +1,7 @@
 package com.yashraj.cadence.ui
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -55,6 +56,8 @@ fun UpdateDialog(version: String, current: String, onLater: () -> Unit, onDownlo
                     scaleX = scale
                     scaleY = scale
                 }
+                // A dialog is its own window, so nothing behind it is blurred: give the glass an opaque base so the screen below cannot show through the text.
+                .background(colors.surfaceSolidRaised, RoundedCornerShape(Radius.sheet))
                 .glass(RoundedCornerShape(Radius.sheet), raised = true)
                 .padding(Space.s6),
             verticalArrangement = Arrangement.spacedBy(Space.s4),

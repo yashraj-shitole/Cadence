@@ -40,6 +40,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.yashraj.cadence.data.BackdropStyle
+import com.yashraj.cadence.data.BackupFolder
+import com.yashraj.cadence.data.BackupFormat
 import com.yashraj.cadence.data.Settings
 import com.yashraj.cadence.data.ThemeMode
 import com.yashraj.cadence.data.WeekStart
@@ -47,6 +49,7 @@ import com.yashraj.cadence.domain.Dates
 import com.yashraj.cadence.feel.HapticKind
 import com.yashraj.cadence.feel.SystemFeel
 import com.yashraj.cadence.ui.AppViewModel
+import com.yashraj.cadence.ui.ImportChoiceDialog
 import com.yashraj.cadence.ui.UpdateStatus
 import com.yashraj.cadence.ui.components.ButtonKind
 import com.yashraj.cadence.ui.components.CButton
@@ -110,6 +113,12 @@ fun SettingsScreen(vm: AppViewModel, onBack: () -> Unit) {
     var tried by remember { mutableStateOf(false) }
     var reminderOpen by remember { mutableStateOf(false) }
     var erasing by remember { mutableStateOf(false) }
+    var pendingImport by remember { mutableStateOf<String?>(null) }
+    val backupBusy by vm.backupBusy.collectAsState()
+    val backupProblem by vm.backupProblem.collectAsState()
+    val folderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        if (uri != null) vm.chooseBackupFolder(uri)
+    }
 
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
         if (uri != null) scope.launch {
@@ -120,12 +129,8 @@ fun SettingsScreen(vm: AppViewModel, onBack: () -> Unit) {
     }
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) scope.launch {
-            val text = try {
-                withContext(Dispatchers.IO) { context.contentResolver.openInputStream(uri)?.use { it.readBytes().toString(Charsets.UTF_8) } }
-            } catch (e: java.io.IOException) {
-                null
-            }
-            if (text == null) vm.showToast("Couldn't read that file") else vm.importJson(text)
+            val text = BackupFolder.read(context, uri)
+            if (text == null) vm.showToast("Couldn't read that file") else pendingImport = text
         }
     }
     val notificationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
@@ -257,6 +262,37 @@ fun SettingsScreen(vm: AppViewModel, onBack: () -> Unit) {
                     }
                 }
 
+                // ---- Backup ----
+                SectionHeading("Backup")
+                SettingsGroup {
+                    val folder = s.backupFolder
+                    SettingRow(
+                        title = "Automatic backup",
+                        sub = backupProblem ?: if (folder == null) {
+                            "Saves your data to a folder you choose, so a reinstall can bring it back"
+                        } else {
+                            "Saved to ${BackupFormat.folderLabel(folder)}"
+                        },
+                        trailing = { CToggle(folder != null, "Automatic backup", { on -> if (on) folderPicker.launch(null) else vm.turnOffBackup() }) },
+                    )
+                    if (folder != null) {
+                        GroupDivider()
+                        SettingRow(
+                            title = "Back up now",
+                            sub = if (backupBusy) "Backing up…" else "Last backup: ${lastBackupText(s.lastBackupAt)}",
+                            chevron = true,
+                            onClick = { if (!backupBusy) vm.backupNow() },
+                        )
+                        GroupDivider()
+                        SettingRow(
+                            title = "Change folder",
+                            sub = BackupFormat.folderLabel(folder),
+                            chevron = true,
+                            onClick = { folderPicker.launch(null) },
+                        )
+                    }
+                }
+
                 // ---- Data ----
                 SectionHeading("Data")
                 SettingsGroup {
@@ -272,14 +308,14 @@ fun SettingsScreen(vm: AppViewModel, onBack: () -> Unit) {
                     GroupDivider()
                     SettingRow(
                         title = "Export data",
-                        sub = "Habits, tasks and notes as one file",
+                        sub = "Habits, tasks, notes and settings as one file",
                         chevron = true,
                         onClick = { exportLauncher.launch("cadence-export.json") },
                     )
                     GroupDivider()
                     SettingRow(
                         title = "Import data",
-                        sub = "Add habits, tasks and notes from an export",
+                        sub = "Add from, or restore, a backup file",
                         chevron = true,
                         onClick = { importLauncher.launch(arrayOf("application/json", "text/plain", "application/octet-stream")) },
                     )
@@ -317,6 +353,14 @@ fun SettingsScreen(vm: AppViewModel, onBack: () -> Unit) {
         }
     }
 
+    pendingImport?.let { text ->
+        ImportChoiceDialog(
+            onAdd = { pendingImport = null; scope.launch { vm.importJson(text, replace = false) } },
+            onReplace = { pendingImport = null; scope.launch { vm.importJson(text, replace = true) } },
+            onCancel = { pendingImport = null },
+        )
+    }
+
     if (erasing) EraseDialog(onCancel = { erasing = false }, onErase = {
         erasing = false
         vm.eraseAll()
@@ -324,7 +368,15 @@ fun SettingsScreen(vm: AppViewModel, onBack: () -> Unit) {
     })
 }
 
-/** The only dialog in the app. It names the result and fades in with a 96% scale. */
+/** "Today 10:42", "3 Nov", or "Not yet". */
+private fun lastBackupText(millis: Long): String {
+    if (millis <= 0) return "Not yet"
+    val at = java.time.Instant.ofEpochMilli(millis).atZone(java.time.ZoneId.systemDefault())
+    return if (at.toLocalDate() == java.time.LocalDate.now()) "Today " + Dates.time(at.hour * 60 + at.minute)
+    else at.format(java.time.format.DateTimeFormatter.ofPattern("d MMM"))
+}
+
+/** The erase confirmation. It names the result and fades in with a 96% scale. */
 @Composable
 private fun EraseDialog(onCancel: () -> Unit, onErase: () -> Unit) {
     val colors = Cadence.colors

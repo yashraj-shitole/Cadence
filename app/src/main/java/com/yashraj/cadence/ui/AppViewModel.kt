@@ -5,9 +5,12 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
 import com.yashraj.cadence.AppContainer
+import android.net.Uri
 import com.yashraj.cadence.BuildConfig
 import com.yashraj.cadence.CadenceApp
 import com.yashraj.cadence.data.BackdropStyle
+import com.yashraj.cadence.data.BackupFolder
+import com.yashraj.cadence.data.BackupFormat
 import com.yashraj.cadence.data.HabitEntity
 import com.yashraj.cadence.data.HabitLogEntity
 import com.yashraj.cadence.data.NoteEntity
@@ -29,6 +32,8 @@ import com.yashraj.cadence.reminder.ReminderScheduler
 import com.yashraj.cadence.update.CheckResult
 import com.yashraj.cadence.update.ReleaseInfo
 import com.yashraj.cadence.update.UpdateChecker
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -39,9 +44,17 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
+import java.io.IOException
 
 /** The Undo toast. Completing and deleting are instant and reversible for five seconds. */
 class ToastState(val token: Long, val message: String, val undo: (() -> Unit)?)
@@ -52,6 +65,10 @@ sealed interface UiEvent {
 }
 
 const val ToastMillis = 5_000
+
+/** A change is written to the backup folder this long after the last edit, and again whenever the app is left. */
+private const val BackupDebounceMs = 20_000L
+private const val DayMs = 24 * 60 * 60 * 1000L
 
 /** Where the "Check for updates" row in Settings is. */
 sealed interface UpdateStatus {
@@ -66,6 +83,7 @@ sealed interface UpdateStatus {
  * App-wide state and actions. Every list is a flow of what is saved; screens only draw it. Null means
  * "still loading", so a screen can wait instead of flashing an empty state.
  */
+@OptIn(FlowPreview::class)
 class AppViewModel(private val container: AppContainer) : ViewModel() {
     private val repo = container.repository
     private val settingsStore = container.settingsStore
@@ -106,9 +124,36 @@ class AppViewModel(private val container: AppContainer) : ViewModel() {
     val updatePrompt: StateFlow<ReleaseInfo?> = _updatePrompt.asStateFlow()
     val appVersion: String = BuildConfig.VERSION_NAME
 
+    private val backupMutex = Mutex()
+    private var backupDirty = false
+    private val _backupProblem = MutableStateFlow<String?>(null)
+
+    /** Why the last automatic backup failed, or null when it is fine. */
+    val backupProblem: StateFlow<String?> = _backupProblem.asStateFlow()
+    private val _backupBusy = MutableStateFlow(false)
+    val backupBusy: StateFlow<Boolean> = _backupBusy.asStateFlow()
+    private val _restoreDeclined = MutableStateFlow(false)
+
+    /**
+     * True on a fresh install with nothing in it, where a restore from a backup file is worth offering before the
+     * walkthrough. Null while the first data is still loading.
+     */
+    val restoreOffer: StateFlow<Boolean?> = combine(settings, habitViews, tasks, notes, _restoreDeclined) { s, h, t, n, declined ->
+        if (s == null || h == null || t == null || n == null) null else !declined && !s.walkthroughSeen && h.isEmpty() && t.isEmpty() && n.isEmpty()
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
     init {
         // One quiet check at start-up. It only speaks up when there is a newer release.
         checkForUpdates(manual = false)
+        // Automatic backup: any change to the data or the portable settings schedules a write to the backup folder.
+        val portable = combine(repo.habits, repo.habitLogs, repo.tasks, repo.notes, settingsStore.settings.map { BackupFormat.settingsToJson(it).toString() }.distinctUntilChanged()) { _, _, _, _, _ -> Unit }
+        viewModelScope.launch { portable.drop(1).collect { backupDirty = true } }
+        viewModelScope.launch { portable.drop(1).debounce(BackupDebounceMs).collect { runBackup(manual = false) } }
+        // And at least once a day, even if nothing changed.
+        viewModelScope.launch {
+            val s = settingsStore.settings.first()
+            if (s.backupFolder != null && Dates.nowMillis() - s.lastBackupAt > DayMs) runBackup(manual = false)
+        }
         // Keep the haptic engine in step with Settings > Feel without the UI having to ask.
         viewModelScope.launch {
             settingsStore.settings.collect { container.haptics.settings = HapticSettings(it.haptics, it.completionOnly) }
@@ -126,6 +171,11 @@ class AppViewModel(private val container: AppContainer) : ViewModel() {
     }
 
     fun onResume() = container.dayClock.refresh()
+
+    /** Leaving the app is the moment to save any change not yet backed up; it outlives the screen. */
+    fun onStop() {
+        if (backupDirty) container.appScope.launch { runBackup(manual = false) }
+    }
 
     // ---- updates ----
 
@@ -316,23 +366,94 @@ class AppViewModel(private val container: AppContainer) : ViewModel() {
     fun setWeekStart(start: WeekStart) = viewModelScope.launch { settingsStore.setWeekStart(start) }
     fun setWalkthroughSeen(seen: Boolean) = viewModelScope.launch { settingsStore.setWalkthroughSeen(seen) }
 
-    suspend fun exportJson(): String = repo.exportJson()
+    suspend fun exportJson(): String = repo.exportJson(settings.value)
 
-    /** Adds a Cadence export to the current data and says what happened in a toast. */
-    suspend fun importJson(text: String) {
+    /**
+     * Reads a Cadence backup and says what happened in a toast. [replace] erases what is here first and also restores
+     * the settings in the file; otherwise the file is only added to the current data.
+     */
+    suspend fun importJson(text: String, replace: Boolean = false) {
         val message = try {
-            val result = repo.importJson(text)
-            if (result.total == 0) {
-                "Nothing new to import"
-            } else {
-                listOf(result.habits to "habit", result.tasks to "task", result.notes to "note")
-                    .filter { it.first > 0 }
-                    .joinToString(", ", prefix = "Imported ") { "${it.first} ${it.second}${if (it.first == 1) "" else "s"}" }
+            val result = repo.importJson(text, replace)
+            if (replace) result.settings?.let { settingsStore.restore(it) }
+            val parts = listOf(result.habits to "habit", result.tasks to "task", result.notes to "note")
+                .filter { it.first > 0 }
+                .joinToString(", ") { "${it.first} ${it.second}${if (it.first == 1) "" else "s"}" }
+            when {
+                replace && parts.isEmpty() -> "Backup restored"
+                replace -> "Restored $parts"
+                parts.isEmpty() -> "Nothing new to import"
+                else -> "Imported $parts"
             }
         } catch (e: IllegalArgumentException) {
             e.message ?: "Couldn't import that file"
         }
         showToast(message)
+    }
+
+    /** "Start fresh" on the first-run restore offer. */
+    fun declineRestore() { _restoreDeclined.value = true }
+
+    // ---- automatic backup ----
+
+    /** Turns automatic backup on, writing to [folder] (a document tree the user just picked), and writes one right away. */
+    fun chooseBackupFolder(folder: Uri) {
+        viewModelScope.launch {
+            val old = settingsStore.settings.first().backupFolder
+            try {
+                BackupFolder.remember(container.appContext, folder)
+            } catch (e: SecurityException) {
+                showToast("Couldn't get access to that folder")
+                return@launch
+            }
+            if (old != null && old != folder.toString()) BackupFolder.forget(container.appContext, old)
+            settingsStore.setBackupFolder(folder.toString())
+            settingsStore.setLastBackupAt(0)
+            _backupProblem.value = null
+            runBackup(manual = true)
+        }
+    }
+
+    fun turnOffBackup() {
+        viewModelScope.launch {
+            settingsStore.settings.first().backupFolder?.let { BackupFolder.forget(container.appContext, it) }
+            settingsStore.setBackupFolder(null)
+            _backupProblem.value = null
+            backupDirty = false
+            showToast("Automatic backup is off. The last backup stays in its folder")
+        }
+    }
+
+    fun backupNow() {
+        viewModelScope.launch { runBackup(manual = true) }
+    }
+
+    /** Writes the backup file. An empty database is never written, so a fresh install cannot overwrite a good backup. */
+    private suspend fun runBackup(manual: Boolean) {
+        val s = settingsStore.settings.first()
+        val folder = s.backupFolder ?: return
+        if (manual) _backupBusy.value = true
+        try {
+            backupMutex.withLock {
+                if (repo.isEmpty()) {
+                    if (manual) showToast("Nothing to back up yet")
+                    return
+                }
+                try {
+                    val json = repo.exportJson(s)
+                    withContext(Dispatchers.IO) { BackupFolder.write(container.appContext, folder, json) }
+                    settingsStore.setLastBackupAt(Dates.nowMillis())
+                    backupDirty = false
+                    _backupProblem.value = null
+                    if (manual) showToast("Backed up")
+                } catch (e: IOException) {
+                    _backupProblem.value = "Couldn't write to the backup folder. Choose it again."
+                    if (manual) showToast("Couldn't back up. Choose the folder again")
+                }
+            }
+        } finally {
+            if (manual) _backupBusy.value = false
+        }
     }
 
     fun eraseAll() {

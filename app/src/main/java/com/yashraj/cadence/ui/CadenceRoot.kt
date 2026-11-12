@@ -38,10 +38,12 @@ import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.yashraj.cadence.CadenceApp
+import com.yashraj.cadence.data.BackupFolder
 import com.yashraj.cadence.data.HabitEntity
 import com.yashraj.cadence.data.TaskEntity
 import com.yashraj.cadence.feel.HapticKind
 import com.yashraj.cadence.feel.SystemFeel
+import kotlinx.coroutines.launch
 import com.yashraj.cadence.ui.components.CTabBar
 import com.yashraj.cadence.ui.components.CToast
 import com.yashraj.cadence.ui.components.Haptics
@@ -125,11 +127,20 @@ private fun CadenceContent(vm: AppViewModel) {
     val walkTargets = remember { WalkTargets() }
     val windowCapture = rememberBackdropState()
     var walkStep by remember { mutableStateOf<Int?>(null) }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
 
     // First run, and "Show the walkthrough" in Settings (which marks it unseen again): start from Today.
     val walkthroughSeen = settings?.walkthroughSeen ?: true
-    androidx.compose.runtime.LaunchedEffect(walkthroughSeen) {
-        if (!walkthroughSeen && walkStep == null) {
+    // On an empty fresh install the walkthrough waits until the restore-from-backup offer has been answered.
+    val restoreOffer by vm.restoreOffer.collectAsState()
+    val restorePicker = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) scope.launch {
+            val text = BackupFolder.read(context, uri)
+            if (text == null) vm.showToast("Couldn't read that file") else vm.importJson(text, replace = true)
+        }
+    }
+    androidx.compose.runtime.LaunchedEffect(walkthroughSeen, restoreOffer) {
+        if (!walkthroughSeen && restoreOffer == false && walkStep == null) {
             nav.selectTab(TabId.Today)
             sheet = null
             kotlinx.coroutines.delay(600)
@@ -297,10 +308,17 @@ private fun CadenceContent(vm: AppViewModel) {
             )
         }
 
+        if (restoreOffer == true) {
+            RestoreOfferDialog(
+                onChoose = { restorePicker.launch(arrayOf("application/json", "text/plain", "application/octet-stream")) },
+                onStartFresh = vm::declineRestore,
+            )
+        }
+
         // The update popup waits for the first-run walkthrough to finish rather than talking over it.
         val updatePrompt by vm.updatePrompt.collectAsState()
         updatePrompt?.let { release ->
-            if (walkStep == null) {
+            if (walkStep == null && restoreOffer != true) {
                 UpdateDialog(
                     version = release.version,
                     current = vm.appVersion,
