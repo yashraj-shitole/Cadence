@@ -21,8 +21,8 @@ android {
         applicationId = "com.yashraj.cadence"
         minSdk = 31
         targetSdk = 37
-        versionCode = 4
-        versionName = "1.1.0"
+        versionCode = 5
+        versionName = "1.1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

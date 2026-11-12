@@ -156,12 +156,17 @@ half4 main(float2 coord) {
     float theta1 = atan(slope);
     float theta2 = asin(sin(theta1) / 1.5);
     float shift = h * thickness * tan(theta1 - theta2) * amount;
-    float2 n = normalize(float2(
+    // On the exact centre row of a thin shape both differences are zero, and normalising a zero vector is undefined: guard it.
+    float2 grad = float2(
         sdRoundRect(p + float2(1.0, 0.0), halfSize, radius) - sdRoundRect(p - float2(1.0, 0.0), halfSize, radius),
-        sdRoundRect(p + float2(0.0, 1.0), halfSize, radius) - sdRoundRect(p - float2(0.0, 1.0), halfSize, radius)));
+        sdRoundRect(p + float2(0.0, 1.0), halfSize, radius) - sdRoundRect(p - float2(0.0, 1.0), halfSize, radius));
+    float2 n = length(grad) > 1.0e-4 ? grad / length(grad) : float2(0.0, -1.0);
     float2 uv = coord - n * shift;
     float2 fringe = n * shift * dispersion;
-    half4 c = half4(content.eval(uv - fringe).r, content.eval(uv).g, content.eval(uv + fringe).b, 1.0);
+    // Keep the backdrop's own alpha. It used to be forced to 1.0, which turned a translucent track (a toggle, a selector) opaque
+    // and dark everywhere the lens bent it, leaving only the thin centre band it skips looking lighter: a bar across the control.
+    half4 base = content.eval(uv);
+    half4 c = half4(content.eval(uv - fringe).r, base.g, content.eval(uv + fringe).b, base.a);
     // The screen's grid, redrawn crisp at the displaced position: the blur has already softened the real one, and
     // lines are what make a lens visible. They bend where the glass bends and fade out toward the flat middle.
     float2 s = uv + origin;
@@ -218,14 +223,19 @@ half4 main(float2 coord) {
             inset = half4(insetColor[i].rgb * half(ia), half(ia)) + inset * (half(1.0) - half(ia));
         }
     }
-    float2 n = normalize(float2(
+    // On the exact centre row of a thin shape both differences are zero; normalising that gave NaN, drawn as a bright line.
+    float2 grad = float2(
         sdRoundRect(p + float2(1.0, 0.0), halfSize, radius) - sdRoundRect(p - float2(1.0, 0.0), halfSize, radius),
-        sdRoundRect(p + float2(0.0, 1.0), halfSize, radius) - sdRoundRect(p - float2(0.0, 1.0), halfSize, radius)));
+        sdRoundRect(p + float2(0.0, 1.0), halfSize, radius) - sdRoundRect(p - float2(0.0, 1.0), halfSize, radius));
+    float2 n = length(grad) > 1.0e-4 ? grad / length(grad) : float2(0.0, -1.0);
     float facing = dot(n, light);
     float band = exp(-depth / rim);
     float key = band * pow(max(facing, 0.0), 1.4);
     float fill = band * pow(max(-facing, 0.0), 2.0) * 0.45;
-    float glow = exp(-depth / (rim * 7.0)) * max(facing, 0.0) * 0.30;
+    // The inner glow follows the edge normal, which flips at the shape's centre line, so it fades out before reaching it: on a small
+    // control that line is only a few dp away and the glow would otherwise step across it.
+    float toAxis = depth / max(min(halfSize.x, halfSize.y), 1.0);
+    float glow = exp(-depth / (rim * 7.0)) * max(facing, 0.0) * 0.30 * (1.0 - smoothstep(0.35, 0.8, toAxis));
     float touchGlow = 0.0;
     if (touchAmount > 0.0) {
         float d = distance(coord, touch) / max(touchRadius, 1.0);
