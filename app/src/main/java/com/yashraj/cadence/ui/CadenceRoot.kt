@@ -36,6 +36,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
@@ -231,7 +232,8 @@ private fun CadenceContent(vm: AppViewModel) {
     CompositionLocalProvider(LocalHaptics provides haptics, LocalBackdrop provides backdrop, LocalWalkTargets provides walkTargets, LocalAurora provides aurora, LocalGlassLight provides glassLight, LocalGlassTouch provides glassTouch, LocalBackground provides background, LocalOverscrollFactory provides bounceFactory) {
       Box(Modifier.fillMaxSize()) {
         Box(Modifier.fillMaxSize().background(colors.backdrop).windowCapture(windowCapture) { walkStep != null }) {
-            Box(Modifier.fillMaxSize().backdropSource(backdrop)) {
+            // Same boundary for the app-wide backdrop the floating bars copy.
+            Box(Modifier.fillMaxSize().graphicsLayer { clip = false }.backdropSource(backdrop)) {
               androidx.compose.animation.SharedTransitionLayout {
               CompositionLocalProvider(LocalInBackdropSource provides true, LocalSharedTransition provides this) {
                 AnimatedContent(

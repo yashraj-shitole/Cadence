@@ -128,6 +128,12 @@ uniform float dispersion;
 uniform float2 origin;
 uniform float gridStep;
 uniform half4 gridColor;
+uniform float saturation;
+
+half4 saturate(half4 c) {
+    half l = dot(c.rgb, half3(0.2126, 0.7152, 0.0722));
+    return half4(mix(half3(l), c.rgb, half(saturation)), c.a);
+}
 
 float sdRoundRect(float2 p, float2 halfSize, float r) {
     float2 q = abs(p) - (halfSize - float2(r));
@@ -139,7 +145,7 @@ half4 main(float2 coord) {
     float2 p = coord - halfSize;
     float depth = -sdRoundRect(p, halfSize, radius);
     if (depth >= bezel || amount <= 0.0) {
-        return content.eval(coord);
+        return saturate(content.eval(coord));
     }
     float x = clamp(depth / bezel, 0.0, 1.0);
     float u = 1.0 - x;
@@ -162,7 +168,7 @@ half4 main(float2 coord) {
     float2 g = abs(fract((s + 1.0) / gridStep - 0.5) - 0.5) * gridStep;
     float line = 1.0 - smoothstep(0.4, 1.4, min(g.x, g.y));
     c.rgb = mix(c.rgb, gridColor.rgb, half(line * gridColor.a * (1.0 - x)));
-    return c;
+    return saturate(c);
 }
 """
 
@@ -239,8 +245,8 @@ private class EffectCache {
         val k = listOf(w, h, corner, sigma, thickness, bezel, amount, saturation, origin.x, origin.y, gridStep, grid.red, grid.green, grid.blue, grid.alpha)
         val cached = effect
         if (cached != null && k == key) return cached
-        val blur = RenderEffect.createBlurEffect(sigma, sigma, Shader.TileMode.MIRROR)
-        val refracted = if (Build.VERSION.SDK_INT >= 33) {
+        val blur = if (sigma > 0.5f) RenderEffect.createBlurEffect(sigma, sigma, Shader.TileMode.MIRROR) else null
+        val built = if (Build.VERSION.SDK_INT >= 33) {
             val s = (shader as? RuntimeShader) ?: RuntimeShader(RefractionAgsl).also { shader = it }
             s.setFloatUniform("size", w, h)
             s.setFloatUniform("radius", corner)
@@ -251,14 +257,16 @@ private class EffectCache {
             s.setFloatUniform("origin", origin.x, origin.y)
             s.setFloatUniform("gridStep", gridStep)
             s.setFloatUniform("gridColor", grid.red, grid.green, grid.blue, grid.alpha)
-            RenderEffect.createChainEffect(RenderEffect.createRuntimeShaderEffect(s, "content"), blur)
+            s.setFloatUniform("saturation", saturation)
+            // One pass for the lens, the grid and the saturation; a blur only where the tile asks for one.
+            val lens = RenderEffect.createRuntimeShaderEffect(s, "content")
+            (if (blur != null) RenderEffect.createChainEffect(lens, blur) else lens).asComposeRenderEffect()
         } else {
-            blur
+            RenderEffect.createColorFilterEffect(
+                ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(saturation) }),
+                blur ?: RenderEffect.createBlurEffect(0.01f, 0.01f, Shader.TileMode.MIRROR),
+            ).asComposeRenderEffect()
         }
-        val built = RenderEffect.createColorFilterEffect(
-            ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(saturation) }),
-            refracted,
-        ).asComposeRenderEffect()
         key = k
         effect = built
         return built
@@ -419,7 +427,7 @@ fun Modifier.glass(
     if (adapt != null && backdrop != null) {
         // A few times a second while the backdrop is changing, read a 1/12 scale copy of what is behind this tile.
         LaunchedEffect(backdrop, adapt) {
-            snapshotFlow { backdrop.version }.sample(280).collect {
+            snapshotFlow { backdrop.version }.sample(450).collect {
                 val self = coordinates
                 val source = backdrop.coordinates
                 if (self != null && source != null && self.isAttached && source.isAttached && self.size.width > 0 && self.size.height > 0) {
@@ -520,7 +528,7 @@ fun Modifier.glass(
                             h = size.height,
                             corner = corner,
                             // Clear glass keeps the grid legible through rows; floating bars soften what scrolls under them.
-                            sigma = (if (blurred) 8f else 1.2f).dp.toPx(),
+                            sigma = if (blurred) 8f.dp.toPx() else 0f,
                             // Proportionate to the tile, so a 23dp knob gets a lens it can hold.
                             thickness = minOf((if (blurred) 46f else 42f).dp.toPx() * boost, minSide * 0.8f),
                             bezel = bezel,

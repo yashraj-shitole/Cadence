@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
@@ -101,7 +102,9 @@ fun SceneryHost(modifier: Modifier = Modifier, content: @Composable BoxScope.() 
     val state = rememberBackdropState()
     CompositionLocalProvider(LocalScenery provides state) {
         Box(modifier.fillMaxSize()) {
-            Scenery(Modifier.backdropSource(state))
+            // Its own render boundary: a glass tile redrawing must never re-run the code that refreshes this backdrop,
+            // or the screen redraws forever (it did: ~60 frames a second and 140% CPU while idle).
+            Scenery(Modifier.graphicsLayer { clip = false }.backdropSource(state))
             content()
         }
     }
