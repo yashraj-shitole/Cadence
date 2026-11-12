@@ -36,7 +36,6 @@ import com.yashraj.cadence.ui.UiEvent
 import com.yashraj.cadence.ui.components.BeatBar
 import com.yashraj.cadence.ui.components.CIconButton
 import com.yashraj.cadence.ui.components.EmptyState
-import com.yashraj.cadence.ui.components.Glows
 import com.yashraj.cadence.ui.components.HabitRow
 import com.yashraj.cadence.ui.components.NextUpCard
 import com.yashraj.cadence.ui.components.SectionHeading
@@ -94,7 +93,7 @@ fun TodayScreen(
         }
     }
 
-    ScreenFrame(Glows.Today) {
+    ScreenFrame {
         ScreenHeader(
             title = "Today",
             eyebrow = Dates.dateLine(today),

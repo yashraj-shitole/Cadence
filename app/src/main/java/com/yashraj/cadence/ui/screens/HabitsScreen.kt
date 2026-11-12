@@ -21,7 +21,6 @@ import com.yashraj.cadence.ui.AppViewModel
 import com.yashraj.cadence.ui.components.CIconButton
 import com.yashraj.cadence.ui.components.DayLegend
 import com.yashraj.cadence.ui.components.EmptyState
-import com.yashraj.cadence.ui.components.Glows
 import com.yashraj.cadence.ui.components.HabitRow
 import com.yashraj.cadence.ui.components.SectionHeading
 import com.yashraj.cadence.ui.components.glass
@@ -42,7 +41,7 @@ fun HabitsScreen(vm: AppViewModel, onOpenHabit: (Long) -> Unit, onNew: (AddMode)
             intro = false
         }
     }
-    ScreenFrame(Glows.Habits) {
+    ScreenFrame {
         val list = habits
         val logged = list?.count { it.loggedToday } ?: 0
         ScreenHeader(

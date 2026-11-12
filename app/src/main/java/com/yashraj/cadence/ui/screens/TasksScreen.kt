@@ -23,7 +23,6 @@ import com.yashraj.cadence.ui.AppViewModel
 import com.yashraj.cadence.ui.components.CChip
 import com.yashraj.cadence.ui.components.CIconButton
 import com.yashraj.cadence.ui.components.EmptyState
-import com.yashraj.cadence.ui.components.Glows
 import com.yashraj.cadence.ui.components.SearchField
 import com.yashraj.cadence.ui.components.SectionHeading
 import com.yashraj.cadence.ui.components.TaskRow
@@ -56,7 +55,7 @@ fun TasksScreen(vm: AppViewModel, onEdit: (TaskEntity) -> Unit, onNew: (AddMode)
         }
     }
 
-    ScreenFrame(Glows.Tasks) {
+    ScreenFrame {
         val list = tasks
         val open = list?.count { !it.done } ?: 0
         val done = list?.count { it.done } ?: 0

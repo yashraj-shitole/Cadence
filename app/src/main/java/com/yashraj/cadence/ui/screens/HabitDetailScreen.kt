@@ -37,7 +37,6 @@ import com.yashraj.cadence.ui.components.CIconButton
 import com.yashraj.cadence.ui.components.ConsistencyGrid
 import com.yashraj.cadence.ui.components.DayLegend
 import com.yashraj.cadence.ui.components.GroupDivider
-import com.yashraj.cadence.ui.components.Glows
 import com.yashraj.cadence.ui.components.MenuItem
 import com.yashraj.cadence.ui.components.SceneryHost
 import com.yashraj.cadence.ui.components.SectionHeading
@@ -72,7 +71,7 @@ fun HabitDetailScreen(
     // The habit was deleted (from the menu, or by Undo being skipped): leave quietly.
     LaunchedEffect(views != null && view == null) { if (views != null && view == null) onBack() }
 
-    SceneryHost(Glows.Detail) {
+    SceneryHost {
         if (view == null) return@SceneryHost
         val sundayFirst = settings?.weekStart == WeekStart.Sunday
         val grid = view.rules.grid(today, sundayFirst, view.logs)

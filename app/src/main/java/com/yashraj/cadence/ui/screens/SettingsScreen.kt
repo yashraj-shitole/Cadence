@@ -61,7 +61,6 @@ import com.yashraj.cadence.ui.components.CSegmented
 import com.yashraj.cadence.ui.components.CToggle
 import com.yashraj.cadence.ui.components.CheckState
 import com.yashraj.cadence.ui.components.GroupDivider
-import com.yashraj.cadence.ui.components.Glows
 import com.yashraj.cadence.ui.components.LocalHaptics
 import com.yashraj.cadence.ui.components.PalettePicker
 import com.yashraj.cadence.ui.components.SceneryHost
@@ -141,7 +140,7 @@ fun SettingsScreen(vm: AppViewModel, onBack: () -> Unit) {
         }
     }
 
-    SceneryHost(Glows.Settings) {
+    SceneryHost {
         Column(
             Modifier
                 .fillMaxSize()

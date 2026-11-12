@@ -44,9 +44,11 @@ import com.yashraj.cadence.data.TaskEntity
 import com.yashraj.cadence.feel.HapticKind
 import com.yashraj.cadence.feel.SystemFeel
 import kotlinx.coroutines.launch
+import com.yashraj.cadence.ui.components.AuroraState
 import com.yashraj.cadence.ui.components.CTabBar
 import com.yashraj.cadence.ui.components.CToast
 import com.yashraj.cadence.ui.components.Haptics
+import com.yashraj.cadence.ui.components.LocalAurora
 import com.yashraj.cadence.ui.components.LocalBackdrop
 import com.yashraj.cadence.ui.components.LocalHaptics
 import com.yashraj.cadence.ui.components.TabId
@@ -119,6 +121,13 @@ private fun CadenceContent(vm: AppViewModel) {
     val haptics = remember(view) { Haptics(engine, view) }
     val backdrop = rememberBackdropState()
     val nav = remember { NavState() }
+    // The background light: random for each launch, and it eases to a new arrangement on every page change.
+    val aurora = remember { AuroraState() }
+    val auroraSpec = motion.fade<Float>(1800, Ease.easeInOut)
+    val pagesSeen = remember { intArrayOf(0) }
+    androidx.compose.runtime.LaunchedEffect(nav.current) {
+        if (pagesSeen[0]++ > 0) aurora.advance(auroraSpec)
+    }
     var sheet by remember { mutableStateOf<SheetTarget?>(null) }
     val today by vm.today.collectAsState()
     val tasks by vm.tasks.collectAsState()
@@ -191,7 +200,7 @@ private fun CadenceContent(vm: AppViewModel) {
     val openSheet: (SheetTarget) -> Unit = { sheet = it }
     val tags = (tasks?.mapNotNull { it.tag } ?: emptyList()).distinct().sorted()
 
-    CompositionLocalProvider(LocalHaptics provides haptics, LocalBackdrop provides backdrop, LocalWalkTargets provides walkTargets) {
+    CompositionLocalProvider(LocalHaptics provides haptics, LocalBackdrop provides backdrop, LocalWalkTargets provides walkTargets, LocalAurora provides aurora) {
       Box(Modifier.fillMaxSize()) {
         Box(Modifier.fillMaxSize().background(colors.backdrop).windowCapture(windowCapture) { walkStep != null }) {
             Box(Modifier.fillMaxSize().backdropSource(backdrop)) {

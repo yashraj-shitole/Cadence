@@ -20,7 +20,6 @@ import com.yashraj.cadence.ui.AppViewModel
 import com.yashraj.cadence.ui.components.CChip
 import com.yashraj.cadence.ui.components.CIconButton
 import com.yashraj.cadence.ui.components.EmptyState
-import com.yashraj.cadence.ui.components.Glows
 import com.yashraj.cadence.ui.components.NoteCard
 import com.yashraj.cadence.ui.components.SearchField
 import com.yashraj.cadence.ui.components.SectionHeading
@@ -43,7 +42,7 @@ fun NotesScreen(vm: AppViewModel, onOpen: (Long?) -> Unit) {
         }
     }
 
-    ScreenFrame(Glows.Notes) {
+    ScreenFrame {
         val list = notes
         ScreenHeader(
             title = "Notes",

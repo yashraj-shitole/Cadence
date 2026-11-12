@@ -71,7 +71,6 @@ import com.yashraj.cadence.ui.components.CChip
 import com.yashraj.cadence.ui.components.CField
 import com.yashraj.cadence.ui.components.CIconButton
 import com.yashraj.cadence.ui.components.CTag
-import com.yashraj.cadence.ui.components.Glows
 import com.yashraj.cadence.ui.components.MenuItem
 import com.yashraj.cadence.ui.components.SceneryHost
 import com.yashraj.cadence.ui.components.glass
@@ -167,7 +166,7 @@ fun NoteEditorScreen(vm: AppViewModel, noteId: Long?, onBack: () -> Unit) {
 
     val checklist = if (raw == null) Markdown.progress(state.toBlocks()) else null
 
-    SceneryHost(Glows.Editor) {
+    SceneryHost {
         Column(
             Modifier
                 .fillMaxSize()

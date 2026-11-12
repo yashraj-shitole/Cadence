@@ -30,7 +30,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.yashraj.cadence.ui.components.GlowSpec
 import com.yashraj.cadence.ui.components.SceneryHost
 import com.yashraj.cadence.ui.theme.CText
 import com.yashraj.cadence.ui.theme.Cadence
@@ -53,8 +52,8 @@ val EyebrowStyle: TextStyle get() = CadenceType.caption.copy(fontWeight = FontWe
 
 /** Every screen: scenery, then one display title top left, with one or two icon buttons at the right. */
 @Composable
-fun ScreenFrame(glows: List<GlowSpec>, modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
-    SceneryHost(glows, modifier) {
+fun ScreenFrame(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+    SceneryHost(modifier) {
         Column(
             Modifier
                 .fillMaxSize()
