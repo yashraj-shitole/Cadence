@@ -20,8 +20,8 @@ const DIST = 10;
 const VIS_H = 2 * DIST * Math.tan(MathUtils.degToRad(FOV / 2)); // world units visible at z = 0
 
 const TIERS = {
-  full: { dpr: 2, aa: true, env: true, fps: 60, lod: 3, seg: 6 },
-  balanced: { dpr: 1.5, aa: true, env: true, fps: 45, lod: 2, seg: 4 },
+  full: { dpr: 1.5, aa: true, env: true, fps: 60, lod: 3, seg: 6 },
+  balanced: { dpr: 1.25, aa: true, env: true, fps: 45, lod: 2, seg: 4 },
   light: { dpr: 1, aa: false, env: false, fps: 30, lod: 1, seg: 3 },
 };
 
@@ -301,8 +301,21 @@ export function create(opts) {
   function findStages() {
     document.querySelectorAll('[data-stage]').forEach((el) => { stageEls[el.dataset.stage] = el; });
   }
+  // Where each stage sits on the page, in document coordinates. Asking the browser for a rectangle forces a layout, and doing it for a
+  // dozen props every frame is what made the objects stutter while scrolling; so it is measured when the layout changes, and once
+  // more when scrolling stops, and every frame only subtracts the scroll offset.
+  const geo = {};
+  function measure() {
+    const ox = window.scrollX, oy = window.scrollY;
+    for (const key in stageEls) {
+      const r = stageEls[key].getBoundingClientRect();
+      geo[key] = { left: r.left + ox, top: r.top + oy, width: r.width, height: r.height };
+    }
+    dirty = true;
+  }
   function resize() {
     vw = window.innerWidth; vh = window.innerHeight;
+    measure();
     const dpr = Math.min(window.devicePixelRatio || 1, cfg.dpr);
     renderer.setPixelRatio(dpr);
     renderer.setSize(vw, vh, false);
@@ -337,8 +350,9 @@ export function create(opts) {
     applyEnv(); resize(); dirty = true;
   }
   function setMotion(m) { motion = m; dirty = true; }
-  function setPointer(x, y) { pointer.tx = x; pointer.ty = y; dirty = true; }
-  function invalidate() { dirty = true; }
+  let lastInput = 0;
+  function setPointer(x, y) { pointer.tx = x; pointer.ty = y; dirty = true; lastInput = performance.now(); }
+  function invalidate() { dirty = true; lastInput = performance.now(); }
 
   /* ---------- per-frame ---------- */
   const tmp = new Vector3();
@@ -346,7 +360,11 @@ export function create(opts) {
   function frame(t, dt) {
     const animate = motion > 0;
     if (!animate && !dirty) return false;
-    if (cfg.fps < 60 && t - last < 1000 / cfg.fps - 2) return false;
+    // While the page is being scrolled or the pointer is moving the scene runs at its tier's rate; at rest it settles to 30 fps, because
+    // every glass panel over the canvas has to re-blur on every frame the canvas changes.
+    const resting = t - lastInput > 600;
+    const gap = resting ? Math.max(1000 / cfg.fps, 1000 / 30) : 1000 / cfg.fps;
+    if (gap > 18 && t - last < gap - 2) return false;
     last = t;
     const d = Math.min(0.033, dt || 0.016);
     clock += d;
@@ -355,23 +373,24 @@ export function create(opts) {
     pointer.y += (pointer.ty - pointer.y) * Math.min(1, d * 6);
 
     let anyVisible = false;
+    const sx = window.scrollX, sy = window.scrollY;
     for (const p of props) {
-      const el = stageEls[p.stage];
-      if (!el || p.lod > cfg.lod) { p.group.visible = false; continue; }
-      const r = el.getBoundingClientRect();
-      const on = r.bottom > -vh * 0.3 && r.top < vh * 1.3 && r.width > 40;
+      const g = geo[p.stage];
+      if (!g || p.lod > cfg.lod) { p.group.visible = false; continue; }
+      const top = g.top - sy, left = g.left - sx, bottom = top + g.height;
+      const on = bottom > -vh * 0.3 && top < vh * 1.3 && g.width > 40;
       step(p.vis, on ? 1 : 0, d, motion, 120, 16);
       if (p.vis.x < 0.01 && !on) { p.group.visible = false; continue; }
       anyVisible = true; p.group.visible = true;
 
       const q = vw < 700 && p.m ? p.m : p;
-      const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-      const sc = Math.max(0.0001, r.width * k * q.s * Math.max(0, p.vis.x));
+      const cx = left + g.width / 2, cy = top + g.height / 2;
+      const sc = Math.max(0.0001, g.width * k * q.s * Math.max(0, p.vis.x));
       p.group.scale.setScalar(sc);
       const bob = Math.sin(clock * 0.9 + p.phase) * p.float * motion;
       p.group.position.set(
-        (cx - vw / 2) * k + q.nx * r.width * k,
-        -(cy - vh / 2) * k - q.ny * r.width * k + bob * sc * 4,
+        (cx - vw / 2) * k + q.nx * g.width * k,
+        -(cy - vh / 2) * k - q.ny * g.width * k + bob * sc * 4,
         p.z
       );
       const sr = p.scrollRot === 0 ? 0 : ((cy - vh / 2) / vh) * 0.5 * motion;
@@ -433,6 +452,12 @@ export function create(opts) {
   // Seed grid cells so first paint is never empty.
   gridGroup.userData.cells.forEach((c) => setCellState(c, 'f'));
   window.addEventListener('resize', resize, { passive: true });
+  // Layout can move without a resize (fonts arriving, sections revealing), so re-measure when the page settles and when scrolling stops.
+  if (window.ResizeObserver) { const ro = new ResizeObserver(() => measure()); ro.observe(document.body); Object.values(stageEls).forEach((el) => ro.observe(el)); }
+  let scrollTimer = 0;
+  window.addEventListener('scroll', () => { clearTimeout(scrollTimer); scrollTimer = setTimeout(measure, 140); }, { passive: true });
+  window.addEventListener('load', () => setTimeout(measure, 300));
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
 
   function dispose() {
     window.removeEventListener('resize', resize);

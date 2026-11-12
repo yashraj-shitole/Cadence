@@ -26,6 +26,15 @@
   var MAX_LIVE = 16;
   var MAP_CAP = 320;              // longest side of a displacement map, in px: the filter stretches it
 
+  /* While the page is scrolling the glass drops its lens for a plain blur: each lens is an SVG filter that would otherwise re-run against
+     the moving 3D canvas on every frame. It comes back a moment after scrolling stops. */
+  var scrollTimer = 0;
+  window.addEventListener('scroll', function () {
+    html.classList.add('is-scrolling');
+    clearTimeout(scrollTimer);
+    scrollTimer = setTimeout(function () { html.classList.remove('is-scrolling'); }, 160);
+  }, { passive: true });
+
   function tier() { return html.dataset.perf || 'balanced'; }
   function enabled() { var t = tier(); return t === 'full' || t === 'balanced'; }
 

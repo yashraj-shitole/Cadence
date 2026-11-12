@@ -121,3 +121,6 @@
 .cd-stage .cd-glass .cd-glass { -webkit-backdrop-filter: none; backdrop-filter: none; background: color-mix(in srgb, var(--glass-raised) 78%, transparent); }
 [data-theme="dark"] .cd-stage .cd-glass .cd-glass { background: color-mix(in srgb, var(--glass-raised) 70%, transparent); }
 .cd-stage .cd-glass .cd-glass[data-lens] { -webkit-backdrop-filter: none; backdrop-filter: none; }
+
+/* While scrolling: no lens (see lens.js), a plain blur instead. */
+html.is-scrolling .cd-stage [data-lens] { -webkit-backdrop-filter: blur(calc(var(--blur-glass) * .35)) saturate(190%); backdrop-filter: blur(calc(var(--blur-glass) * .35)) saturate(190%); }
