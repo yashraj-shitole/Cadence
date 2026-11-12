@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
 import com.yashraj.cadence.AppContainer
+import com.yashraj.cadence.BuildConfig
 import com.yashraj.cadence.CadenceApp
 import com.yashraj.cadence.data.BackdropStyle
 import com.yashraj.cadence.data.HabitEntity
@@ -25,6 +26,9 @@ import com.yashraj.cadence.domain.planToday
 import com.yashraj.cadence.domain.taskKey
 import com.yashraj.cadence.feel.HapticSettings
 import com.yashraj.cadence.reminder.ReminderScheduler
+import com.yashraj.cadence.update.CheckResult
+import com.yashraj.cadence.update.ReleaseInfo
+import com.yashraj.cadence.update.UpdateChecker
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -48,6 +52,15 @@ sealed interface UiEvent {
 }
 
 const val ToastMillis = 5_000
+
+/** Where the "Check for updates" row in Settings is. */
+sealed interface UpdateStatus {
+    data object Idle : UpdateStatus
+    data object Checking : UpdateStatus
+    data object UpToDate : UpdateStatus
+    data object Failed : UpdateStatus
+    data class Available(val release: ReleaseInfo) : UpdateStatus
+}
 
 /**
  * App-wide state and actions. Every list is a flow of what is saved; screens only draw it. Null means
@@ -84,7 +97,18 @@ class AppViewModel(private val container: AppContainer) : ViewModel() {
     private val _events = MutableSharedFlow<UiEvent>(extraBufferCapacity = 4)
     val events: SharedFlow<UiEvent> = _events.asSharedFlow()
 
+    private val _updateStatus = MutableStateFlow<UpdateStatus>(UpdateStatus.Idle)
+    val updateStatus: StateFlow<UpdateStatus> = _updateStatus.asStateFlow()
+
+    private val _updatePrompt = MutableStateFlow<ReleaseInfo?>(null)
+
+    /** The release to offer in the update popup, or null when there is nothing to show. */
+    val updatePrompt: StateFlow<ReleaseInfo?> = _updatePrompt.asStateFlow()
+    val appVersion: String = BuildConfig.VERSION_NAME
+
     init {
+        // One quiet check at start-up. It only speaks up when there is a newer release.
+        checkForUpdates(manual = false)
         // Keep the haptic engine in step with Settings > Feel without the UI having to ask.
         viewModelScope.launch {
             settingsStore.settings.collect { container.haptics.settings = HapticSettings(it.haptics, it.completionOnly) }
@@ -102,6 +126,31 @@ class AppViewModel(private val container: AppContainer) : ViewModel() {
     }
 
     fun onResume() = container.dayClock.refresh()
+
+    // ---- updates ----
+
+    /** The start-up check stays silent unless it finds something; a tap in Settings always answers. */
+    fun checkForUpdates(manual: Boolean) {
+        if (_updateStatus.value == UpdateStatus.Checking) return
+        val previous = _updateStatus.value
+        _updateStatus.value = UpdateStatus.Checking
+        viewModelScope.launch {
+            when (val result = UpdateChecker.check(appVersion)) {
+                is CheckResult.Available -> {
+                    _updateStatus.value = UpdateStatus.Available(result.release)
+                    _updatePrompt.value = result.release
+                }
+                CheckResult.UpToDate -> _updateStatus.value = UpdateStatus.UpToDate
+                CheckResult.Failed -> {
+                    _updateStatus.value = if (manual) UpdateStatus.Failed else (previous as? UpdateStatus.Available ?: UpdateStatus.Idle)
+                    if (manual) showToast("Couldn't check for updates")
+                }
+            }
+        }
+    }
+
+    fun showUpdatePrompt(release: ReleaseInfo) { _updatePrompt.value = release }
+    fun dismissUpdatePrompt() { _updatePrompt.value = null }
 
     // ---- toast ----
 

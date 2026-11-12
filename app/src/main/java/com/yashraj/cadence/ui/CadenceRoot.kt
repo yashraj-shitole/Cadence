@@ -1,6 +1,9 @@
 package com.yashraj.cadence.ui
 
 import android.app.Activity
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.net.Uri
 import android.graphics.drawable.ColorDrawable
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
@@ -292,6 +295,26 @@ private fun CadenceContent(vm: AppViewModel) {
                 actions = actions,
                 onDismiss = { sheet = null },
             )
+        }
+
+        // The update popup waits for the first-run walkthrough to finish rather than talking over it.
+        val updatePrompt by vm.updatePrompt.collectAsState()
+        updatePrompt?.let { release ->
+            if (walkStep == null) {
+                UpdateDialog(
+                    version = release.version,
+                    current = vm.appVersion,
+                    onLater = vm::dismissUpdatePrompt,
+                    onDownload = {
+                        vm.dismissUpdatePrompt()
+                        try {
+                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(release.url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                        } catch (e: ActivityNotFoundException) {
+                            vm.showToast("No browser found to open the download")
+                        }
+                    },
+                )
+            }
         }
 
         walkStep?.let { step ->

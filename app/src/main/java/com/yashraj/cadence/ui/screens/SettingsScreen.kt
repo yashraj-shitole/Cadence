@@ -47,6 +47,7 @@ import com.yashraj.cadence.domain.Dates
 import com.yashraj.cadence.feel.HapticKind
 import com.yashraj.cadence.feel.SystemFeel
 import com.yashraj.cadence.ui.AppViewModel
+import com.yashraj.cadence.ui.UpdateStatus
 import com.yashraj.cadence.ui.components.ButtonKind
 import com.yashraj.cadence.ui.components.CButton
 import com.yashraj.cadence.ui.components.CCheck
@@ -288,6 +289,28 @@ fun SettingsScreen(vm: AppViewModel, onBack: () -> Unit) {
                         sub = "Asks you to confirm first",
                         danger = true,
                         onClick = { erasing = true },
+                    )
+                }
+
+                // ---- About ----
+                SectionHeading("About")
+                SettingsGroup {
+                    val update by vm.updateStatus.collectAsState()
+                    SettingRow(
+                        title = "Check for updates",
+                        sub = when (val u = update) {
+                            UpdateStatus.Checking -> "Checking…"
+                            UpdateStatus.UpToDate -> "You have the latest version"
+                            UpdateStatus.Failed -> "Couldn't reach GitHub. Try again"
+                            is UpdateStatus.Available -> "Version ${u.release.version} is available"
+                            UpdateStatus.Idle -> "Looks for a newer release on GitHub"
+                        },
+                        value = "v${vm.appVersion}",
+                        chevron = true,
+                        onClick = {
+                            val u = update
+                            if (u is UpdateStatus.Available) vm.showUpdatePrompt(u.release) else vm.checkForUpdates(manual = true)
+                        },
                     )
                 }
             }
