@@ -38,6 +38,10 @@ data class Settings(
     val lastCelebratedDay: Long = -1,
     /** Whether the first-run walkthrough has been finished or skipped. */
     val walkthroughSeen: Boolean = false,
+    /** Folder (a document-tree URI) the automatic backup writes to; null when automatic backup is off. */
+    val backupFolder: String? = null,
+    /** When the last backup was written, in epoch milliseconds; 0 if never. */
+    val lastBackupAt: Long = 0,
 )
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "cadence_settings")
@@ -57,6 +61,8 @@ class SettingsStore(private val context: Context) {
         val weekStart = stringPreferencesKey("week_start")
         val lastCelebratedDay = longPreferencesKey("last_celebrated_day")
         val walkthroughSeen = booleanPreferencesKey("walkthrough_seen")
+        val backupFolder = stringPreferencesKey("backup_folder")
+        val lastBackupAt = longPreferencesKey("last_backup_at")
     }
 
     val settings: Flow<Settings> = context.dataStore.data.map { p ->
@@ -75,6 +81,8 @@ class SettingsStore(private val context: Context) {
             weekStart = p[Keys.weekStart]?.let { runCatching { WeekStart.valueOf(it) }.getOrNull() } ?: d.weekStart,
             lastCelebratedDay = p[Keys.lastCelebratedDay] ?: d.lastCelebratedDay,
             walkthroughSeen = p[Keys.walkthroughSeen] ?: d.walkthroughSeen,
+            backupFolder = p[Keys.backupFolder]?.takeIf { it.isNotEmpty() },
+            lastBackupAt = p[Keys.lastBackupAt] ?: d.lastBackupAt,
         )
     }
 
@@ -91,6 +99,25 @@ class SettingsStore(private val context: Context) {
     suspend fun setWeekStart(start: WeekStart) = edit { it[Keys.weekStart] = start.name }
     suspend fun setLastCelebratedDay(day: Long) = edit { it[Keys.lastCelebratedDay] = day }
     suspend fun setWalkthroughSeen(seen: Boolean) = edit { it[Keys.walkthroughSeen] = seen }
+
+    suspend fun setBackupFolder(uri: String?) = edit { it[Keys.backupFolder] = uri.orEmpty() }
+    suspend fun setLastBackupAt(millis: Long) = edit { it[Keys.lastBackupAt] = millis }
+
+    /** Applies the settings from a restored backup in one write. Device-only values (backup folder, last backup) are kept. */
+    suspend fun restore(s: Settings) = edit {
+        it[Keys.motion] = s.motion
+        it[Keys.haptics] = s.haptics
+        it[Keys.completionOnly] = s.completionOnly
+        it[Keys.palette] = s.palette
+        it[Keys.theme] = s.theme.name
+        it[Keys.backdrop] = s.backdrop.name
+        it[Keys.reduceTransparency] = s.reduceTransparency
+        it[Keys.highContrast] = s.highContrast
+        it[Keys.reminderMinute] = s.reminderMinute ?: -1
+        it[Keys.weekendRest] = s.weekendRest
+        it[Keys.weekStart] = s.weekStart.name
+        it[Keys.walkthroughSeen] = true
+    }
 
     private suspend fun edit(block: (androidx.datastore.preferences.core.MutablePreferences) -> Unit) {
         context.dataStore.edit { block(it) }

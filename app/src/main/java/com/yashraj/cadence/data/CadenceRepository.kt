@@ -72,12 +72,14 @@ class CadenceRepository(private val db: CadenceDatabase) {
 
     // ---- data ----
 
-    /** Habits, tasks and notes as one readable JSON file. */
-    suspend fun exportJson(): String = withContext(Dispatchers.IO) {
+    /** Habits, tasks, notes and (when given) the look-and-feel settings as one readable JSON file. */
+    suspend fun exportJson(settings: Settings? = null): String = withContext(Dispatchers.IO) {
         fun <T> JSONArray.fill(items: List<T>, build: (T) -> JSONObject) = apply { items.forEach { put(build(it)) } }
         JSONObject()
             .put("app", "Cadence")
+            .put("format", BackupFormat.VERSION)
             .put("exportedAt", Dates.nowMillis())
+            .apply { if (settings != null) put("settings", BackupFormat.settingsToJson(settings)) }
             .put(
                 "habits",
                 JSONArray().fill(habitDao.getHabits()) {
@@ -114,18 +116,19 @@ class CadenceRepository(private val db: CadenceDatabase) {
     }
 
     /**
-     * Reads a file written by [exportJson] and adds it to what is already here. Ids are remapped so habit logs stay
-     * attached to their habit, and anything identical to an existing item is skipped, so importing the same file
-     * twice changes nothing. Throws [IllegalArgumentException] when the file is not a Cadence export; nothing is
-     * written in that case.
+     * Reads a file written by [exportJson]. By default it adds to what is already here: ids are remapped so habit logs
+     * stay attached to their habit, and anything identical to an existing item is skipped, so importing the same file
+     * twice changes nothing. With [replace] everything here is erased first, in the same transaction, so a bad file
+     * can never leave the database half-emptied. Throws [IllegalArgumentException] when the file is not a usable
+     * Cadence export; nothing is written in that case.
      */
-    suspend fun importJson(text: String): ImportResult = withContext(Dispatchers.IO) {
+    suspend fun importJson(text: String, replace: Boolean = false): ImportResult = withContext(Dispatchers.IO) {
         val root = try {
             JSONObject(text)
         } catch (e: org.json.JSONException) {
             throw IllegalArgumentException("That file is not a Cadence export.")
         }
-        require(root.optString("app") == "Cadence") { "That file is not a Cadence export." }
+        BackupFormat.requireImportable(root)
 
         fun JSONObject.str(key: String): String? = if (isNull(key)) null else optString(key)
         fun JSONObject.long(key: String): Long? = if (isNull(key)) null else optLong(key)
@@ -137,6 +140,11 @@ class CadenceRepository(private val db: CadenceDatabase) {
             var habitsAdded = 0
             var tasksAdded = 0
             var notesAdded = 0
+            if (replace) {
+                habitDao.deleteAllHabits()
+                taskDao.deleteAll()
+                noteDao.deleteAll()
+            }
 
             val existingHabits = habitDao.getHabits().toMutableList()
             val habitIds = HashMap<Long, Long>()
@@ -198,14 +206,19 @@ class CadenceRepository(private val db: CadenceDatabase) {
                 )
                 notesAdded++
             }
-            ImportResult(habitsAdded, tasksAdded, notesAdded)
+            ImportResult(habitsAdded, tasksAdded, notesAdded, BackupFormat.settingsFromJson(root.optJSONObject("settings")))
         }
+    }
+
+    /** True when there is nothing to lose: no habits, tasks or notes. */
+    suspend fun isEmpty(): Boolean = withContext(Dispatchers.IO) {
+        habitDao.getHabits().isEmpty() && taskDao.getTasks().isEmpty() && noteDao.getNotes().isEmpty()
     }
 
     suspend fun eraseAll() = withContext(Dispatchers.IO) { db.clearAllTables() }
 }
 
 /** How many items an import added; duplicates are not counted. */
-data class ImportResult(val habits: Int, val tasks: Int, val notes: Int) {
+data class ImportResult(val habits: Int, val tasks: Int, val notes: Int, val settings: Settings? = null) {
     val total get() = habits + tasks + notes
 }

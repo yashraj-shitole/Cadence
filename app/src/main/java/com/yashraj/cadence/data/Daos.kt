@@ -48,6 +48,10 @@ interface HabitDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertLogs(logs: List<HabitLogEntity>)
+
+    /** Logs go with their habits (cascade). */
+    @Query("DELETE FROM habits")
+    suspend fun deleteAllHabits()
 }
 
 @Dao
@@ -69,6 +73,9 @@ interface TaskDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(tasks: List<TaskEntity>)
+
+    @Query("DELETE FROM tasks")
+    suspend fun deleteAll()
 }
 
 @Dao
@@ -90,4 +97,7 @@ interface NoteDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(notes: List<NoteEntity>)
+
+    @Query("DELETE FROM notes")
+    suspend fun deleteAll()
 }
