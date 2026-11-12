@@ -4,7 +4,7 @@ Habits, tasks and notes that keep a steady beat. A native Android app (Kotlin, J
 
 ## Stack
 - Kotlin + Jetpack Compose, no Material components: every control is built from the design system.
-- Room (SQLite) for habits, habit logs, tasks and notes; DataStore for settings. No account, no network.
+- Room (SQLite) for habits, habit logs, tasks and notes; DataStore for settings. No account and no tracking; the only request it makes is a check for a newer release.
 - minSdk 31 (real-time `RenderEffect` blur for floating glass), targetSdk 37.
 
 ## Notes editor

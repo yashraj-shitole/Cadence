@@ -42,7 +42,7 @@ class DayClock(scope: CoroutineScope) {
     }
 }
 
-/** Hand-wired singletons: one database, one settings store, one haptic engine. No account, no network. */
+/** Hand-wired singletons: one database, one settings store, one haptic engine. No account. The only network call is the update check. */
 class AppContainer(context: Context) {
     val appContext: Context = context.applicationContext
     val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
