@@ -100,6 +100,8 @@ html[data-theme="dark"] .logo__mark, html[data-theme="hc-dark"] .logo__mark { bo
 @keyframes draw { to { stroke-dashoffset: 0; } }
 .hero__lede { margin: 0; font: 400 clamp(17px, 1.6vw, 20px)/1.55 var(--font-text); max-width: 52ch; text-wrap: pretty; }
 .hero__cta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; }
+.hero__meta, .get__meta { margin: 14px 0 0; font: 500 14px/20px var(--font-text); color: var(--ink-muted); max-width: 52ch; }
+.hero__meta[hidden], .get__meta[hidden] { display: none; }
 .hero__facts { list-style: none; margin: 22px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px 18px; font: 600 14px/20px var(--font-text); }
 .hero__facts li { display: inline-flex; align-items: center; gap: 6px; }
 .hero__visual { display: grid; justify-items: center; gap: 14px; }

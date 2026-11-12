@@ -27,11 +27,11 @@
 </script>
 </head>
 <body>
-<!-- The "Get Cadence" buttons open the latest GitHub release (data-store-url). -->
+<!-- Every "Download" button is a direct link to Cadence.apk on the latest GitHub release (data-store-url): it starts the download. -->
 <div class="bg" aria-hidden="true"><i class="bg__glow bg__glow--1"></i><i class="bg__glow bg__glow--3"></i><i class="bg__glow bg__glow--2"></i></div>
 <canvas id="gl" aria-hidden="true"></canvas>
 
-<div class="cd-stage page" id="page" data-store-url="https://github.com/yashraj-shitole/Cadence/releases/latest">
+<div class="cd-stage page" id="page" data-store-url="https://github.com/yashraj-shitole/Cadence/releases/latest/download/Cadence.apk">
 <a class="skip" href="#main">Skip to content</a>
 
 <header class="nav" id="nav">
@@ -42,12 +42,13 @@
       <a href="#screens">Screens</a>
       <a href="#streaks">Streaks</a>
       <a href="#feel">Feel</a>
+      <a href="#extras">Details</a>
       <a href="#privacy">Privacy</a>
     </nav>
     <div class="nav__actions">
       <button class="perfpill" id="perfPill" type="button" aria-haspopup="dialog" aria-controls="look" title="Performance mode"><i class="perfpill__dot" aria-hidden="true"></i><span id="perfPillText">Auto</span></button>
       <button class="cd-iconbtn cd-press" id="lookBtn" type="button" aria-haspopup="dialog" aria-controls="look" aria-label="Look and performance"><i data-icon="sliders"></i></button>
-      <a class="cd-btn cd-btn--primary cd-press nav__cta" href="#get" data-get>Get Cadence</a>
+      <a class="cd-btn cd-btn--primary cd-press nav__cta" href="#get" data-get>Download</a>
     </div>
   </div>
 </header>
@@ -62,9 +63,10 @@
       <h1 class="hero__title rv" style="--i:1">Keep a steady <span class="hero__beat">beat<svg viewBox="0 0 200 14" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M3 9 C 40 3, 70 12, 100 7 S 165 4, 197 8"/></svg></span>.</h1>
       <p class="hero__lede rv" style="--i:2">Cadence is a calm Android app that keeps your day in one place. Open it and you know two things within two seconds: the one thing to do now, and how the day is going.</p>
       <div class="hero__cta rv" style="--i:3">
-        <a class="cd-btn cd-btn--primary cd-press" href="#get" data-get>Get Cadence</a>
+        <a class="cd-btn cd-btn--primary cd-press" href="#get" data-get>Download Cadence</a>
         <a class="cd-btn cd-btn--glass cd-press" href="#screens">See every screen</a>
       </div>
+      <p class="hero__meta rv" style="--i:3" data-version hidden></p>
       <ul class="hero__facts rv" style="--i:4">
         <li><i data-icon="user-off" data-sm></i>No account</li>
         <li><i data-icon="wifi-off" data-sm></i>Works offline</li>
@@ -277,6 +279,28 @@
   </div>
 </section>
 
+<!-- ================= DETAILS ================= -->
+<section class="sec" id="extras">
+  <div class="wrap">
+    <header class="sec__head">
+      <p class="cd-eyebrow rv">The finer points</p>
+      <h2 class="sec__title rv" style="--i:1">Made to feel like glass, and to keep out of the way.</h2>
+      <p class="sec__lede rv" style="--i:2">The newest version adds a liquid-glass look, a background that flows, your own photo behind it all, and a safe way back after a reinstall.</p>
+    </header>
+    <div class="facts">
+      <article class="fact cd-glass rv" data-spot style="--i:0"><i data-icon="sliders"></i><h3>Glass that bends light</h3><p>Cards, bars and controls bend what is behind them at the edges, catch a light that follows how you hold the phone, and glow from under your finger.</p></article>
+      <article class="fact cd-glass rv" data-spot style="--i:1"><i data-icon="sun"></i><h3>A background that flows</h3><p>A soft gradient, different on every launch, drifts to a new arrangement as you move between pages. Nothing moves while you rest.</p></article>
+      <article class="fact cd-glass rv" data-spot style="--i:2"><i data-icon="eye"></i><h3>Your own background</h3><p>Pick a photo from your phone. Cadence keeps a copy inside the app and keeps the text readable over any picture.</p></article>
+      <article class="fact cd-glass rv" data-spot style="--i:3"><i data-icon="download"></i><h3>Backup and restore</h3><p>Save a backup file to a folder you choose. After a reinstall, one tap on the first screen brings everything back, settings included.</p></article>
+      <article class="fact cd-glass rv" data-spot style="--i:4"><i data-icon="repeat"></i><h3>Update checks</h3><p>Cadence tells you when a new version is out and downloads it on request. That check is the only thing the app ever asks the internet.</p></article>
+      <article class="fact cd-glass rv" data-spot style="--i:5"><i data-icon="bell"></i><h3>Calm when you want it</h3><p>Turn Motion off and the glass stays still: no tilt, no spread, no bounce. Reduce transparency makes every surface solid.</p></article>
+    </div>
+    <figure class="quote rv">
+      <blockquote>Glass should show you the day, not get in front of it.</blockquote>
+    </figure>
+  </div>
+</section>
+
 <!-- ================= PRIVACY ================= -->
 <section class="sec" id="privacy">
   <div class="wrap">
@@ -290,7 +314,7 @@
       <article class="fact cd-glass rv" data-spot style="--i:1"><i data-icon="wifi-off"></i><h3>Works offline, always</h3><p>There is no sync, no sign-in and no server of ours. Aeroplane mode changes nothing.</p></article>
       <article class="fact cd-glass rv" data-spot style="--i:2"><i data-icon="file-text"></i><h3>Notes are plain Markdown</h3><p>Headings, lists, to-dos, quotes and code. Type <kbd>/</kbd> for the menu, or use the shortcuts you already know. Export any note as a <kbd>.md</kbd> file.</p></article>
       <article class="fact cd-glass rv" data-spot style="--i:3"><i data-icon="bell"></i><h3>One reminder a day</h3><p>A single daily nudge at the time you choose. Nothing else ever notifies you.</p></article>
-      <article class="fact cd-glass rv" data-spot style="--i:4"><i data-icon="download"></i><h3>Take it with you</h3><p>Export your data whenever you like. It is yours, in a format you can read.</p></article>
+      <article class="fact cd-glass rv" data-spot style="--i:4"><i data-icon="download"></i><h3>Take it with you</h3><p>Export your data whenever you like, or let Cadence keep a backup file in a folder you choose. It is yours, in a format you can read.</p></article>
       <article class="fact cd-glass rv" data-spot style="--i:5"><i data-icon="eye"></i><h3>Built to be read</h3><p>Text holds at least 4.5:1 contrast in every palette. High contrast themes reach 7:1, and every state has a shape as well as a colour.</p></article>
     </div>
     <figure class="quote rv">
@@ -309,8 +333,11 @@
         <h2 class="sec__title">Start with the next beat.</h2>
         <p class="sec__lede">Add one habit you can do in two minutes. Cadence will keep the count, and keep quiet about the rest.</p>
         <div class="hero__cta">
+          <a class="cd-btn cd-btn--primary cd-press" id="storeBtn" href="#get" data-get>Download Cadence</a>
           <a class="cd-btn cd-btn--glass cd-press" href="#top">Back to the top</a>
         </div>
+        <p class="get__meta" data-version hidden></p>
+        <p class="get__meta">Open the downloaded file and allow installs from your browser when Android asks. Needs Android 12 or newer.</p>
       </div>
     </div>
   </div>

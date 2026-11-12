@@ -757,7 +757,20 @@
 
   /* ================= get ================= */
   const storeUrl = ($('#page').dataset.storeUrl || '').trim();
-  if (storeUrl) $$('[data-get], #storeBtn').forEach((a) => { a.href = storeUrl; a.target = '_blank'; a.rel = 'noopener'; });
+  // A direct link to the installer: the browser starts the download and the page stays put.
+  if (storeUrl) $('[data-get], #storeBtn').forEach((a) => { a.href = storeUrl; a.setAttribute('download', 'Cadence.apk'); });
+  // Version and size of what the button will download, read once from GitHub's public release data. Silent if it fails.
+  try {
+    fetch('https://api.github.com/repos/yashraj-shitole/Cadence/releases/latest', { headers: { Accept: 'application/vnd.github+json' } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((rel) => {
+        if (!rel || !rel.tag_name) return;
+        const apk = (rel.assets || []).find((a) => a.name === 'Cadence.apk');
+        const text = 'Version ' + String(rel.tag_name).replace(/^v/, '') + (apk ? ' · ' + (apk.size / 1048576).toFixed(1) + ' MB' : '');
+        $('[data-version]').forEach((el) => { el.textContent = text; el.hidden = false; });
+      })
+      .catch(() => {});
+  } catch (e) { /* offline or blocked: the button still works */ }
 
   /* ================= boot ================= */
   apply();
