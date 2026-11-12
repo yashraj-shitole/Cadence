@@ -294,7 +294,7 @@ fun SettingsGroup(modifier: Modifier = Modifier, content: @Composable ColumnScop
             .fillMaxWidth()
             .glass(RoundedCornerShape(Radius.card))
             .clip(RoundedCornerShape(Radius.card)),
-        content = content,
+        content = { androidx.compose.runtime.CompositionLocalProvider(LocalOnGlass provides true) { content() } },
     )
 }
 

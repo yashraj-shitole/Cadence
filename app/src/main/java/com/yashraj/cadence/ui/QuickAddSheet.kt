@@ -30,6 +30,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -59,6 +60,8 @@ import com.yashraj.cadence.ui.components.CChip
 import com.yashraj.cadence.ui.components.CField
 import com.yashraj.cadence.ui.components.CSegmented
 import com.yashraj.cadence.ui.components.LocalHaptics
+import com.yashraj.cadence.ui.components.rememberGlassAdapt
+import com.yashraj.cadence.ui.components.LocalOnGlass
 import com.yashraj.cadence.ui.components.glass
 import com.yashraj.cadence.ui.screens.bleedHorizontal
 import com.yashraj.cadence.ui.theme.CText
@@ -162,6 +165,7 @@ fun QuickAddOverlay(
                     },
                 ),
         ) {
+            CompositionLocalProvider(LocalOnGlass provides true) {
             SheetContent(
                 target = current,
                 today = today,
@@ -171,6 +175,7 @@ fun QuickAddOverlay(
                 maxHeight = maxSheet,
                 modifier = Modifier.onSizeChanged { sheetHeight = it.height },
             )
+            }
         }
     }
 }
@@ -250,7 +255,7 @@ private fun SheetContent(
         modifier
             .fillMaxWidth()
             .heightIn(max = maxHeight)
-            .glass(RoundedCornerShape(topStart = Radius.sheet, topEnd = Radius.sheet), raised = true, blurred = true)
+            .glass(RoundedCornerShape(topStart = Radius.sheet, topEnd = Radius.sheet), raised = true, blurred = true, adapt = rememberGlassAdapt(canFlip = false, themeIsDark = colors.isDark))
             .verticalScroll(rememberScrollState())
             .navigationBarsPadding()
             .padding(start = Space.s5, end = Space.s5, top = Space.s3, bottom = Space.s6)

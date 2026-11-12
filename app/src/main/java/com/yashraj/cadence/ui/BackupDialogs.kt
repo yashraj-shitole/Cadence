@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -21,6 +22,7 @@ import com.yashraj.cadence.feel.HapticKind
 import com.yashraj.cadence.ui.components.ButtonKind
 import com.yashraj.cadence.ui.components.CButtonBlock
 import com.yashraj.cadence.ui.components.LocalHaptics
+import com.yashraj.cadence.ui.components.LocalOnGlass
 import com.yashraj.cadence.ui.components.glass
 import com.yashraj.cadence.ui.components.shadowBleed
 import com.yashraj.cadence.ui.theme.CText
@@ -43,6 +45,7 @@ private fun CadenceDialogCard(title: String, body: String, onDismiss: () -> Unit
         appear.animateTo(1f, motion.fade(Dur.base, Ease.easeOut))
     }
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        CompositionLocalProvider(LocalOnGlass provides true) {
         Column(
             Modifier
                 .padding(vertical = shadowBleed(colors.shadows.float).dp)
@@ -64,6 +67,7 @@ private fun CadenceDialogCard(title: String, body: String, onDismiss: () -> Unit
             CText(title, CadenceType.title)
             CText(body, CadenceType.body, color = colors.inkMuted, maxLines = 8)
             Column(verticalArrangement = Arrangement.spacedBy(Space.s2), content = buttons)
+        }
         }
     }
 }

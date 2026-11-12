@@ -170,6 +170,7 @@ fun CChip(
     val motion = Cadence.motion
     val haptics = LocalHaptics.current
     val shape = RoundedCornerShape(Radius.pill)
+    val onGlass = LocalOnGlass.current
     val fill by animateColorAsState(if (selected) colors.glassRaised else colors.glass, motion.fade(Dur.quick), label = "chipFill")
     val soft by animateColorAsState(if (selected) colors.accentSoft else Color.Transparent, motion.fade(Dur.quick), label = "chipSoft")
     val edge by animateColorAsState(if (selected) colors.accent else colors.glassEdge, motion.fade(Dur.quick), label = "chipEdge")
@@ -190,9 +191,9 @@ fun CChip(
         Row(
             Modifier
                 .height(40.dp)
-                .background(fill, shape)
+                .then(if (onGlass) Modifier.background(fill, shape) else Modifier.glass(shape, raised = selected, interactive = true))
                 .background(soft, shape)
-                .border(if (selected) 2.dp else 1.dp, edge, shape)
+                .then(if (onGlass || selected) Modifier.border(if (selected) 2.dp else 1.dp, edge, shape) else Modifier)
                 .padding(horizontal = Space.s4),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically,

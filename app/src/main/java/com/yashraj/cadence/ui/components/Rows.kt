@@ -240,6 +240,7 @@ fun NextUpCard(
         },
         label = "nextUp",
     ) {
+        androidx.compose.runtime.CompositionLocalProvider(LocalOnGlass provides true) {
         Column(Modifier.fillMaxWidth().padding(Space.s5)) {
             CText("NEXT UP", CadenceType.label, color = colors.inkMuted)
             if (beat != null) {
@@ -253,6 +254,7 @@ fun NextUpCard(
                 CText("That's today", CadenceType.title, Modifier.padding(top = Space.s1))
                 CText("$total of $total beats done. Rest well.", CadenceType.callout, color = colors.inkMuted)
             }
+        }
         }
     }
 }

@@ -31,6 +31,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.RoundRect
@@ -584,6 +585,22 @@ fun Modifier.glass(
             // The 1px rim sits inside the edge: stroke 2px centred on it and keep the inner half.
             clipPath(shapePath) { drawPath(shapePath, edge, style = Stroke(width = 2.dp.toPx())) }
         }
+}
+
+/**
+ * True inside a glass surface (card, sheet, dialog, menu). Apple's rule is "avoid glass on glass": what sits on top of
+ * glass uses fills, transparency and vibrancy instead of becoming a second piece of the material.
+ */
+val LocalOnGlass = compositionLocalOf { false }
+
+/**
+ * A translucent tint with a soft sheen, for something that sits on glass: it reads as part of the glass beneath it
+ * rather than as an opaque solid or a second layer of glass.
+ */
+fun Modifier.vibrantFill(color: Color, shape: Shape): Modifier = drawBehind {
+    val path = shape.createOutline(size, layoutDirection, this).toPath(size)
+    drawPath(path, color)
+    drawPath(path, Brush.verticalGradient(0f to Color.White.copy(alpha = 0.24f), 0.5f to Color.Transparent))
 }
 
 /** Shadow under the primary button and the centre add button: tinted by the palette. */

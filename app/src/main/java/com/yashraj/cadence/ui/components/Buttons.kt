@@ -50,6 +50,7 @@ fun CButton(
     val colors = Cadence.colors
     val haptics = LocalHaptics.current
     val shape = RoundedCornerShape(Radius.control)
+    val onGlass = LocalOnGlass.current
     val contentColor = when (kind) {
         ButtonKind.Primary -> colors.onAccent
         ButtonKind.Glass -> colors.ink
@@ -66,11 +67,12 @@ fun CButton(
     if (kind == ButtonKind.Primary) m = m.accentGlow(colors.accentShadow, shape)
     m = when (kind) {
         // Tinted glass, not a solid fill: still lensed and lit, with enough tint to keep the label at full contrast.
-        ButtonKind.Primary -> m.glass(
-            shape,
-            interactive = true,
-            tint = colors.accent.copy(alpha = (if (colors.solidSurfaces) 1f else 0.84f) * (if (enabled) 1f else 0.4f)),
-        )
+        // On glass it is a vibrant fill (never a second glass); on bare ground it is tinted glass.
+        ButtonKind.Primary -> if (onGlass) {
+            m.vibrantFill(colors.accent.copy(alpha = (if (colors.solidSurfaces) 1f else 0.92f) * (if (enabled) 1f else 0.4f)), shape)
+        } else {
+            m.glass(shape, interactive = true, tint = colors.accent.copy(alpha = (if (colors.solidSurfaces) 1f else 0.84f) * (if (enabled) 1f else 0.4f)))
+        }
         ButtonKind.Glass -> m.background(colors.glassRaised, shape).border(1.dp, colors.glassEdge, shape)
         else -> m
     }

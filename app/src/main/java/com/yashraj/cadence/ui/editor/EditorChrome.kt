@@ -30,6 +30,7 @@ import com.yashraj.cadence.ui.components.CButton
 import com.yashraj.cadence.ui.components.CIconButton
 import com.yashraj.cadence.ui.components.LocalHaptics
 import com.yashraj.cadence.ui.components.glass
+import com.yashraj.cadence.ui.components.rememberGlassAdapt
 import com.yashraj.cadence.ui.components.tappable
 import com.yashraj.cadence.ui.theme.CIcon
 import com.yashraj.cadence.ui.theme.CText
@@ -71,7 +72,7 @@ fun SlashMenu(commands: List<SlashCommand>, onPick: (SlashCommand) -> Unit, modi
         modifier
             .fillMaxWidth()
             .heightIn(max = 264.dp)
-            .glass(shape, raised = true)
+            .glass(shape, raised = true, blurred = true, adapt = rememberGlassAdapt(canFlip = false, themeIsDark = Cadence.colors.isDark))
             .semantics { contentDescription = "Formatting commands" },
         contentPadding = PaddingValues(vertical = 6.dp, horizontal = 6.dp),
     ) {
@@ -119,7 +120,7 @@ fun FormatBar(actions: List<FormatAction>, onDone: () -> Unit, modifier: Modifie
         modifier
             .fillMaxWidth()
             .height(56.dp)
-            .glass(RoundedCornerShape(Radius.pill), raised = true)
+            .glass(RoundedCornerShape(Radius.pill), raised = true, blurred = true, adapt = rememberGlassAdapt(canFlip = false, themeIsDark = Cadence.colors.isDark))
             .padding(horizontal = Space.s2),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
