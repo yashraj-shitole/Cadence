@@ -10,6 +10,11 @@ Habits, tasks and notes that keep a steady beat. A native Android app (Kotlin, J
 ## Notes editor
 Notes are stored as plain Markdown and edited as blocks (text, headings, bulleted, numbered and to-do lists, quote, code, divider) with inline bold, italic, strikethrough, code and links. Type `/` for the formatting menu, or use Markdown shortcuts (`# `, `- `, `1. `, `[] `, `> `, ``` ``` ```, `---`). The More menu shows the raw Markdown source, copies it, or exports a `.md` file.
 
+## Backup and restore
+Settings > Backup can save everything to a folder you pick (for example Download/Cadence) as `cadence-backup.json`. It is rewritten a short while after any change, whenever you leave the app, and at least once a day. The folder is chosen with the system folder picker, so the app needs no storage permission, and the file survives an uninstall. A backup holds habits, logs, tasks, notes and the look-and-feel settings; the folder choice itself stays on the device. An empty database never overwrites a backup.
+
+On a fresh install the app offers **Restore from a backup?** before the walkthrough: choose the file and everything comes back, settings included. Settings > Data > Import data takes the same file and asks whether to **Add** it to what is here or **Replace** everything with it. Files from 1.0.x (no settings) still import.
+
 ## Design tokens
 `app/src/main/java/com/yashraj/cadence/ui/theme/GeneratedTokens.kt` is generated. After changing anything in
 `cadence-handoff/design-system/`, run:
