@@ -191,6 +191,8 @@ uniform half3 shadeColor;
 uniform float2 touch;
 uniform float touchRadius;
 uniform float touchAmount;
+uniform half4 insetColor[4];
+uniform float4 insetP[4];
 
 float sdRoundRect(float2 p, float2 halfSize, float r) {
     float2 q = abs(p) - (halfSize - float2(r));
@@ -203,6 +205,18 @@ half4 main(float2 coord) {
     float depth = -sdRoundRect(p, halfSize, radius);
     if (depth < 0.0) {
         return half4(0.0);
+    }
+    // The bevel: CSS-style inset shadows, each the area outside the tile shrunk by its spread and moved by its offset,
+    // softened by half its blur. Computed here, per pixel, because drawing them as blurred cut-out paths was the most
+    // expensive thing on screen: it cost 10ms a frame on the note editor.
+    half4 inset = half4(0.0);
+    for (int i = 0; i < 4; i++) {
+        if (insetColor[i].a > 0.0) {
+            float d = sdRoundRect(p - insetP[i].xy, halfSize - float2(insetP[i].w), max(radius - insetP[i].w, 0.0));
+            float sigma = max(insetP[i].z * 0.5, 0.5);
+            float ia = insetColor[i].a * smoothstep(-sigma * 1.2, sigma * 1.2, d);
+            inset = half4(insetColor[i].rgb * half(ia), half(ia)) + inset * (half(1.0) - half(ia));
+        }
     }
     float2 n = normalize(float2(
         sdRoundRect(p + float2(1.0, 0.0), halfSize, radius) - sdRoundRect(p - float2(1.0, 0.0), halfSize, radius),
@@ -223,11 +237,12 @@ half4 main(float2 coord) {
     float sh = band * pow(max(-facing, 0.0), 1.6) * shadeAmount;
     float a = clamp(hi + sh, 0.0, 1.0);
     if (a <= 0.0) {
-        return half4(0.0);
+        return inset;
     }
     half3 lightColor = mix(tint, touchTint, half(touchGlow / (rimLight + touchGlow + 1.0e-4)));
     half3 color = mix(shadeColor, lightColor, half(hi / (hi + sh + 1.0e-4)));
-    return half4(color * half(a), half(a));
+    half4 spec = half4(color * half(a), half(a));
+    return spec + inset * (half(1.0) - spec.a);
 }
 """
 
@@ -273,6 +288,25 @@ private class EffectCache {
     }
 }
 
+/** The inset (bevel) layers as the two arrays the shader reads: offset/blur/spread in px, and colour; four layers at most. */
+private fun insetUniforms(bevel: List<ShadowLayer>, centreFill: Float, density: Float): Pair<FloatArray, FloatArray> {
+    val p = FloatArray(16)
+    val c = FloatArray(16)
+    bevel.filter { it.inset }.take(4).forEachIndexed { i, l ->
+        // The soft white inner glow is what frosts the middle of a row; keep the crisp rim and thin the haze.
+        val haze = centreFill < 1f && l.blur > 4f && l.color.alpha > 0.2f
+        p[i * 4] = l.x * density
+        p[i * 4 + 1] = l.y * density
+        p[i * 4 + 2] = l.blur * density
+        p[i * 4 + 3] = l.spread * density
+        c[i * 4] = l.color.red
+        c[i * 4 + 1] = l.color.green
+        c[i * 4 + 2] = l.color.blue
+        c[i * 4 + 3] = l.color.alpha * (if (haze) centreFill else 1f)
+    }
+    return p to c
+}
+
 /** The light-on-glass shader of one tile, set up for the current frame. Null before Android 13. */
 private class SpecularCache {
     private var shader: Any? = null
@@ -280,6 +314,7 @@ private class SpecularCache {
     fun brush(
         w: Float, h: Float, corner: Float, light: Offset, rim: Float, intensity: Float, shadeAmount: Float,
         tint: Color, touchTint: Color, shade: Color, touch: Offset, touchRadius: Float, touchAmount: Float,
+        insetP: FloatArray, insetC: FloatArray,
     ): Brush? {
         if (Build.VERSION.SDK_INT < 33) return null
         val s = (shader as? RuntimeShader) ?: RuntimeShader(SpecularAgsl).also { shader = it }
@@ -295,6 +330,8 @@ private class SpecularCache {
         s.setFloatUniform("touch", touch.x, touch.y)
         s.setFloatUniform("touchRadius", touchRadius)
         s.setFloatUniform("touchAmount", touchAmount)
+        s.setFloatUniform("insetP", insetP)
+        s.setFloatUniform("insetColor", insetC)
         return ShaderBrush(s)
     }
 }
@@ -405,11 +442,14 @@ fun Modifier.glass(
     var position by remember { mutableStateOf(Offset.Zero) }
     val cache = remember { EffectCache() }
     val specular = remember { SpecularCache() }
+    // Android 13+ draws the bevel in the light shader (cheap); older versions and solid surfaces keep the drawn layers.
+    val shaderBevel = !colors.solidSurfaces && Build.VERSION.SDK_INT >= 33
     val touch = LocalGlassTouch.current
     val fill = if (raised) colors.glassRaised else colors.glass
     // Rows and cards are clear glass: the middle should look through to the ground, with the rim and lens doing the work.
     val centreFill = if (!raised && !blurred) 0.4f else 1f
     val bevel = if (raised) colors.shadows.float else colors.shadows.glass
+    val insets = remember(bevel, centreFill, density.density) { insetUniforms(bevel, centreFill, density.density) }
     val sheen = colors.glassSheen
     val edge = colors.glassEdge
     val solid = colors.solidSurfaces
@@ -487,6 +527,10 @@ fun Modifier.glass(
             val corner = minOf(rr.topLeftCornerRadius.x, minSide / 2f)
             // Bigger glass is a thicker slab: more lensing and softer light.
             val boost = GlassLightMath.sizeBoost(minSide, density.density)
+            // Size in dp squared. The lens and blur run over every pixel of a tile each frame, so a screen-sized panel (the note
+            // editor) skips the backdrop copy entirely, and a large floating one (the quick-add sheet) gets a cheaper blur.
+            val areaDp = (size.width / density.density) * (size.height / density.density)
+            val bigPanel = areaDp > 250_000f
 
             // Light from the background light behind this tile: it tints the glass edge light and bleeds into the shadow.
             val spill = if (solid || appear <= 0f) null else aurora?.let {
@@ -514,7 +558,7 @@ fun Modifier.glass(
             val tintNow = if (tint == Color.Unspecified) tint else lerp(tint, if (ambient > 0.5f) Color.Black else Color.White, 0.2f * abs(ambient - 0.5f)).copy(alpha = tint.alpha)
 
             clipPath(shapePath) {
-                if (backdrop != null) {
+                if (backdrop != null && !bigPanel) {
                     // Read so a moved tile or a redrawn source refreshes the blurred copy.
                     backdrop.version
                     position
@@ -528,7 +572,7 @@ fun Modifier.glass(
                             h = size.height,
                             corner = corner,
                             // Clear glass keeps the grid legible through rows; floating bars soften what scrolls under them.
-                            sigma = if (blurred) 8f.dp.toPx() else 0f,
+                            sigma = if (blurred) (if (areaDp > 120_000f) 5f else 8f).dp.toPx() else 0f,
                             // Proportionate to the tile, so a 23dp knob gets a lens it can hold.
                             thickness = minOf((if (blurred) 46f else 42f).dp.toPx() * boost, minSide * 0.8f),
                             bezel = bezel,
@@ -562,7 +606,7 @@ fun Modifier.glass(
                         ),
                     )
                 }
-                drawIntoCanvas { canvas ->
+                if (!shaderBevel && areaDp < 120_000f) drawIntoCanvas { canvas ->
                     bevel.filter { it.inset }.forEach {
                         // The soft white inner glow is what frosts the middle of a row; keep the crisp rim and thin the haze.
                         val layer = if (centreFill < 1f && it.blur > 4f && it.color.alpha > 0.2f) ShadowLayer(true, it.x, it.y, it.blur, it.spread, it.color.copy(alpha = it.color.alpha * centreFill)) else it
@@ -588,6 +632,8 @@ fun Modifier.glass(
                         touch = if (touch == null) Offset.Zero else touch.point - position,
                         touchRadius = 240.dp.toPx() * (0.22f + 0.78f * (touch?.spread?.value ?: 0f)),
                         touchAmount = (touch?.glow?.value ?: 0f) * (if (dark) 0.42f else 0.55f) * lightScale,
+                        insetP = insets.first,
+                        insetC = insets.second,
                     )
                     if (brush != null) drawRect(brush)
                 }
